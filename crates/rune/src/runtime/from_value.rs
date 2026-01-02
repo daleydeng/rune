@@ -347,7 +347,15 @@ impl_integer!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
 impl FromValue for f64 {
     #[inline]
     fn from_value(value: Value) -> Result<Self, RuntimeError> {
-        value.as_float()
+        #[cfg(feature = "number-32")]
+        {
+            Ok(value.as_float()? as f64)
+        }
+
+        #[cfg(not(feature = "number-32"))]
+        {
+            value.as_float()
+        }
     }
 }
 

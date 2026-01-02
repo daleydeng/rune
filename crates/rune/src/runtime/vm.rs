@@ -337,13 +337,14 @@ impl Vm {
     ///
     /// ```no_run
     /// use rune::sync::Arc;
+    /// use rune::number::SignedType;
     /// use rune::{Context, Unit, Vm};
     ///
     /// let unit = Arc::try_new(Unit::default())?;
     /// let mut vm = Vm::without_runtime(unit)?;
     ///
-    /// let output = vm.execute(["main"], (33i64,))?.complete()?;
-    /// let output: i64 = rune::from_value(output)?;
+    /// let output = vm.execute(["main"], (33 as SignedType,))?.complete()?;
+    /// let output: SignedType = rune::from_value(output)?;
     ///
     /// println!("output: {}", output);
     /// # Ok::<_, rune::support::Error>(())
@@ -354,6 +355,7 @@ impl Vm {
     ///
     /// ```no_run
     /// use rune::sync::Arc;
+    /// use rune::number::{SignedType, UnsignedType};
     /// use rune::{Context, Unit, Vm};
     ///
     /// // Normally the unit would be created by compiling some source,
@@ -362,11 +364,11 @@ impl Vm {
     /// let mut vm = Vm::without_runtime(unit)?;
     ///
     /// let mut args = Vec::new();
-    /// args.push(rune::to_value(1u32)?);
+    /// args.push(rune::to_value(1 as UnsignedType)?);
     /// args.push(rune::to_value(String::from("Hello World"))?);
     ///
     /// let output = vm.execute(["main"], args)?.complete()?;
-    /// let output: i64 = rune::from_value(output)?;
+    /// let output: SignedType = rune::from_value(output)?;
     ///
     /// println!("output: {}", output);
     /// # Ok::<_, rune::support::Error>(())
@@ -947,9 +949,15 @@ impl Vm {
         macro_rules! convert {
             ($from:ty, $value:expr) => {
                 match ty.into_hash() {
-                    f64::HASH => Value::from($value as f64),
-                    u64::HASH => Value::from($value as u64),
-                    i64::HASH => Value::from($value as i64),
+                    crate::runtime::FloatType::HASH => {
+                        Value::from($value as crate::runtime::FloatType)
+                    }
+                    crate::runtime::UnsignedType::HASH => {
+                        Value::from($value as crate::runtime::UnsignedType)
+                    }
+                    crate::runtime::SignedType::HASH => {
+                        Value::from($value as crate::runtime::SignedType)
+                    }
                     ty => {
                         return Err(VmError::new(VmErrorKind::UnsupportedAs {
                             value: TypeInfo::from(<$from as TypeOf>::STATIC_TYPE_INFO),
@@ -961,9 +969,9 @@ impl Vm {
         }
 
         let value = match a.as_ref() {
-            Repr::Inline(Inline::Unsigned(a)) => convert!(u64, *a),
-            Repr::Inline(Inline::Signed(a)) => convert!(i64, *a),
-            Repr::Inline(Inline::Float(a)) => convert!(f64, *a),
+            Repr::Inline(Inline::Unsigned(a)) => convert!(crate::runtime::UnsignedType, *a),
+            Repr::Inline(Inline::Signed(a)) => convert!(crate::runtime::SignedType, *a),
+            Repr::Inline(Inline::Float(a)) => convert!(crate::runtime::FloatType, *a),
             value => {
                 return Err(VmError::new(VmErrorKind::UnsupportedAs {
                     value: value.type_info(),
@@ -1521,16 +1529,16 @@ impl Vm {
                 (Repr::Inline(lhs), Repr::Inline(rhs)) => match (lhs, rhs) {
                     (Inline::Unsigned(lhs), rhs) => {
                         let rhs = rhs.as_integer()?;
-                        let value = (ops.u64)(*lhs, rhs).ok_or_else(ops.error)?;
+                        let value = (ops.unsigned)(*lhs, rhs).ok_or_else(ops.error)?;
                         Inline::Unsigned(value)
                     }
                     (Inline::Signed(lhs), rhs) => {
                         let rhs = rhs.as_integer()?;
-                        let value = (ops.i64)(*lhs, rhs).ok_or_else(ops.error)?;
+                        let value = (ops.signed)(*lhs, rhs).ok_or_else(ops.error)?;
                         Inline::Signed(value)
                     }
                     (Inline::Float(lhs), Inline::Float(rhs)) => {
-                        let value = (ops.f64)(*lhs, *rhs);
+                        let value = (ops.float)(*lhs, *rhs);
                         Inline::Float(value)
                     }
                     (lhs, rhs) => {
@@ -1592,12 +1600,12 @@ impl Vm {
             let inline = match (lhs.as_ref(), rhs.as_ref()) {
                 (Repr::Inline(Inline::Unsigned(lhs)), Repr::Inline(rhs)) => {
                     let rhs = rhs.as_integer()?;
-                    let value = (ops.u64)(*lhs, rhs);
+                    let value = (ops.unsigned)(*lhs, rhs);
                     Inline::Unsigned(value)
                 }
                 (Repr::Inline(Inline::Signed(lhs)), Repr::Inline(rhs)) => {
                     let rhs = rhs.as_integer()?;
-                    let value = (ops.i64)(*lhs, rhs);
+                    let value = (ops.signed)(*lhs, rhs);
                     Inline::Signed(value)
                 }
                 (Repr::Inline(Inline::Bool(lhs)), Repr::Inline(Inline::Bool(rhs))) => {
@@ -1654,12 +1662,12 @@ impl Vm {
                     Pair::Same(value) => match value.as_mut() {
                         Repr::Inline(Inline::Unsigned(value)) => {
                             let shift = u32::try_from(*value).ok().ok_or_else(ops.error)?;
-                            let value = (ops.u64)(*value, shift).ok_or_else(ops.error)?;
+                            let value = (ops.unsigned)(*value, shift).ok_or_else(ops.error)?;
                             Inline::Unsigned(value)
                         }
                         Repr::Inline(Inline::Signed(value)) => {
                             let shift = u32::try_from(*value).ok().ok_or_else(ops.error)?;
-                            let value = (ops.i64)(*value, shift).ok_or_else(ops.error)?;
+                            let value = (ops.signed)(*value, shift).ok_or_else(ops.error)?;
                             Inline::Signed(value)
                         }
                         Repr::Any(..) => break 'fallback (value.clone(), value.clone()),
@@ -1673,13 +1681,13 @@ impl Vm {
                     },
                     Pair::Pair(lhs, rhs) => match (lhs.as_mut(), rhs.as_ref()) {
                         (Repr::Inline(Inline::Unsigned(lhs)), Repr::Inline(rhs)) => {
-                            let rhs = rhs.as_integer()?;
-                            let value = (ops.u64)(*lhs, rhs).ok_or_else(ops.error)?;
+                            let rhs = rhs.as_integer::<u32>()?;
+                            let value = (ops.unsigned)(*lhs, rhs).ok_or_else(ops.error)?;
                             Inline::Unsigned(value)
                         }
                         (Repr::Inline(Inline::Signed(lhs)), Repr::Inline(rhs)) => {
-                            let rhs = rhs.as_integer()?;
-                            let value = (ops.i64)(*lhs, rhs).ok_or_else(ops.error)?;
+                            let rhs = rhs.as_integer::<u32>()?;
+                            let value = (ops.signed)(*lhs, rhs).ok_or_else(ops.error)?;
                             Inline::Signed(value)
                         }
                         (Repr::Any(..), _) => {
@@ -1727,17 +1735,17 @@ impl Vm {
         let fallback = match target_value(&mut self.stack, &self.unit, target, rhs)? {
             TargetValue::Same(value) => match value.as_mut() {
                 Repr::Inline(Inline::Signed(value)) => {
-                    let out = (ops.i64)(*value, *value).ok_or_else(ops.error)?;
+                    let out = (ops.signed)(*value, *value).ok_or_else(ops.error)?;
                     *value = out;
                     return Ok(());
                 }
                 Repr::Inline(Inline::Unsigned(value)) => {
-                    let out = (ops.u64)(*value, *value).ok_or_else(ops.error)?;
+                    let out = (ops.unsigned)(*value, *value).ok_or_else(ops.error)?;
                     *value = out;
                     return Ok(());
                 }
                 Repr::Inline(Inline::Float(value)) => {
-                    let out = (ops.f64)(*value, *value);
+                    let out = (ops.float)(*value, *value);
                     *value = out;
                     return Ok(());
                 }
@@ -1753,18 +1761,18 @@ impl Vm {
             TargetValue::Pair(mut lhs, rhs) => match (lhs.as_mut(), rhs.as_ref()) {
                 (Repr::Inline(Inline::Signed(lhs)), Repr::Inline(rhs)) => {
                     let rhs = rhs.as_integer()?;
-                    let out = (ops.i64)(*lhs, rhs).ok_or_else(ops.error)?;
+                    let out = (ops.signed)(*lhs, rhs).ok_or_else(ops.error)?;
                     *lhs = out;
                     return Ok(());
                 }
                 (Repr::Inline(Inline::Unsigned(lhs)), Repr::Inline(rhs)) => {
                     let rhs = rhs.as_integer()?;
-                    let out = (ops.u64)(*lhs, rhs).ok_or_else(ops.error)?;
+                    let out = (ops.unsigned)(*lhs, rhs).ok_or_else(ops.error)?;
                     *lhs = out;
                     return Ok(());
                 }
                 (Repr::Inline(Inline::Float(lhs)), Repr::Inline(Inline::Float(rhs))) => {
-                    let out = (ops.f64)(*lhs, *rhs);
+                    let out = (ops.float)(*lhs, *rhs);
                     *lhs = out;
                     return Ok(());
                 }
@@ -1796,12 +1804,12 @@ impl Vm {
             TargetValue::Same(value) => match value.as_mut() {
                 Repr::Inline(Inline::Unsigned(value)) => {
                     let rhs = *value;
-                    (ops.u64)(value, rhs);
+                    (ops.unsigned)(value, rhs);
                     return Ok(());
                 }
                 Repr::Inline(Inline::Signed(value)) => {
                     let rhs = *value;
-                    (ops.i64)(value, rhs);
+                    (ops.signed)(value, rhs);
                     return Ok(());
                 }
                 Repr::Inline(Inline::Bool(value)) => {
@@ -1821,12 +1829,12 @@ impl Vm {
             TargetValue::Pair(mut lhs, rhs) => match (lhs.as_mut(), rhs.as_ref()) {
                 (Repr::Inline(Inline::Unsigned(lhs)), Repr::Inline(rhs)) => {
                     let rhs = rhs.as_integer()?;
-                    (ops.u64)(lhs, rhs);
+                    (ops.unsigned)(lhs, rhs);
                     return Ok(());
                 }
                 (Repr::Inline(Inline::Signed(lhs)), Repr::Inline(rhs)) => {
                     let rhs = rhs.as_integer()?;
-                    (ops.i64)(lhs, rhs);
+                    (ops.signed)(lhs, rhs);
                     return Ok(());
                 }
                 (Repr::Inline(Inline::Bool(lhs)), Repr::Inline(Inline::Bool(rhs))) => {
@@ -1861,13 +1869,13 @@ impl Vm {
             TargetValue::Same(value) => match value.as_mut() {
                 Repr::Inline(Inline::Unsigned(value)) => {
                     let shift = u32::try_from(*value).ok().ok_or_else(ops.error)?;
-                    let out = (ops.u64)(*value, shift).ok_or_else(ops.error)?;
+                    let out = (ops.unsigned)(*value, shift).ok_or_else(ops.error)?;
                     *value = out;
                     return Ok(());
                 }
                 Repr::Inline(Inline::Signed(value)) => {
                     let shift = u32::try_from(*value).ok().ok_or_else(ops.error)?;
-                    let out = (ops.i64)(*value, shift).ok_or_else(ops.error)?;
+                    let out = (ops.signed)(*value, shift).ok_or_else(ops.error)?;
                     *value = out;
                     return Ok(());
                 }
@@ -1882,14 +1890,14 @@ impl Vm {
             },
             TargetValue::Pair(mut lhs, rhs) => match (lhs.as_mut(), rhs.as_ref()) {
                 (Repr::Inline(Inline::Unsigned(lhs)), Repr::Inline(rhs)) => {
-                    let rhs = rhs.as_integer()?;
-                    let out = (ops.u64)(*lhs, rhs).ok_or_else(ops.error)?;
+                    let rhs = rhs.as_integer::<u32>()?;
+                    let out = (ops.unsigned)(*lhs, rhs).ok_or_else(ops.error)?;
                     *lhs = out;
                     return Ok(());
                 }
                 (Repr::Inline(Inline::Signed(lhs)), Repr::Inline(rhs)) => {
-                    let rhs = rhs.as_integer()?;
-                    let out = (ops.i64)(*lhs, rhs).ok_or_else(ops.error)?;
+                    let rhs = rhs.as_integer::<u32>()?;
+                    let out = (ops.signed)(*lhs, rhs).ok_or_else(ops.error)?;
                     *lhs = out;
                     return Ok(());
                 }
@@ -2447,7 +2455,12 @@ impl Vm {
     }
 
     #[cfg_attr(feature = "bench", inline(never))]
-    fn op_eq_unsigned(&mut self, addr: Address, value: u64, out: Output) -> Result<(), VmError> {
+    fn op_eq_unsigned(
+        &mut self,
+        addr: Address,
+        value: crate::runtime::UnsignedType,
+        out: Output,
+    ) -> Result<(), VmError> {
         let v = self.stack.at(addr);
 
         let is_match = match v.as_inline() {
@@ -2460,7 +2473,12 @@ impl Vm {
     }
 
     #[cfg_attr(feature = "bench", inline(never))]
-    fn op_eq_signed(&mut self, addr: Address, value: i64, out: Output) -> Result<(), VmError> {
+    fn op_eq_signed(
+        &mut self,
+        addr: Address,
+        value: crate::runtime::SignedType,
+        out: Output,
+    ) -> Result<(), VmError> {
         let is_match = match self.stack.at(addr).as_inline() {
             Some(Inline::Signed(actual)) => *actual == value,
             _ => false,

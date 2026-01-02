@@ -22,22 +22,22 @@ macro_rules! inline_macros {
         }
 
         $path! {
-            /// Coerce into [`u64`] unsigned integer.
-            Unsigned(u64),
+            /// Coerce into [`UnsignedType`][crate::runtime::UnsignedType] unsigned integer.
+            Unsigned($crate::runtime::UnsignedType),
             as_unsigned,
             as_unsigned_mut,
         }
 
         $path! {
-            /// Coerce into [`i64`] signed integer.
-            Signed(i64),
+            /// Coerce into [`SignedType`][crate::runtime::SignedType] signed integer.
+            Signed($crate::runtime::SignedType),
             as_signed,
             as_signed_mut,
         }
 
         $path! {
-            /// Coerce into [`f64`] float.
-            Float(f64),
+            /// Coerce into [`FloatType`][crate::runtime::FloatType] float.
+            Float($crate::runtime::FloatType),
             as_float,
             as_float_mut,
         }

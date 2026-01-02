@@ -1,5 +1,6 @@
 use crate::ast::prelude::*;
 
+use ast::NumberFloatSize;
 use ast::token::NumberSize;
 use num::Num;
 
@@ -102,7 +103,8 @@ impl<'a> Resolve<'a> for LitNumber {
             "i16" => Some(ast::NumberSuffix::Signed(text.suffix, NumberSize::S16)),
             "i32" => Some(ast::NumberSuffix::Signed(text.suffix, NumberSize::S32)),
             "i64" => Some(ast::NumberSuffix::Signed(text.suffix, NumberSize::S64)),
-            "f32" | "f64" => Some(ast::NumberSuffix::Float(text.suffix)),
+            "f32" => Some(ast::NumberSuffix::Float(text.suffix, NumberFloatSize::F32)),
+            "f64" => Some(ast::NumberSuffix::Float(text.suffix, NumberFloatSize::F64)),
             "" => None,
             _ => {
                 return Err(compile::Error::new(

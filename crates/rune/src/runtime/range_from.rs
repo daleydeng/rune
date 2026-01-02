@@ -303,7 +303,7 @@ where
 range_iter!(RangeFrom, RangeFromIter<T>, {
     #[rune::function(instance, keep, protocol = SIZE_HINT)]
     #[inline]
-    pub(crate) fn size_hint(&self) -> (u64, Option<u64>) {
-        (u64::MAX, None)
+    pub(crate) fn size_hint(&self) -> (usize, Option<usize>) {
+        (usize::MAX, None)
     }
 });

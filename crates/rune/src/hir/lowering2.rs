@@ -19,7 +19,8 @@ use crate::hir;
 use crate::parse::{NonZeroId, Resolve};
 use crate::query::{self, GenericsParameters, Named2, Named2Kind, Used};
 use crate::runtime::{
-    self, format, ConstInstance, ConstValue, ConstValueKind, Inline, Type, TypeHash,
+    self, format, ConstInstance, ConstValue, ConstValueKind, FloatType, Inline, SignedType, Type,
+    TypeHash, UnsignedType,
 };
 use crate::Hash;
 
@@ -673,13 +674,27 @@ fn expr_expanded_macro<'hir>(
                 Ok(hir::ExprKind::Lit(hir::Lit::Str(lit)))
             }
             query::BuiltInMacro2::Line(line) => {
+                let size = if cfg!(feature = "number-32") {
+                    NumberSize::S32
+                } else {
+                    NumberSize::S64
+                };
+
                 let Some(n) = line.to_u64() else {
                     return Err(Error::new(
                         &*p,
-                        ErrorKind::BadUnsignedOutOfBounds {
-                            size: NumberSize::S64,
-                        },
+                        ErrorKind::BadUnsignedOutOfBounds { size },
                     ));
+                };
+
+                let n: UnsignedType = match UnsignedType::try_from(n) {
+                    Ok(n) => n,
+                    Err(..) => {
+                        return Err(Error::new(
+                            &*p,
+                            ErrorKind::BadUnsignedOutOfBounds { size },
+                        ));
+                    }
                 };
 
                 Ok(hir::ExprKind::Lit(hir::Lit::Unsigned(n)))
@@ -2718,9 +2733,19 @@ fn lit<'hir>(cx: &mut Ctxt<'hir, '_, '_>, p: &mut Stream<'_>) -> Result<hir::Lit
             let n = lit.resolve(resolve_context!(cx.q))?;
 
             match (n.value, n.suffix) {
-                (ast::NumberValue::Float(n), _) => {
+                (ast::NumberValue::Float(n), suffix) => {
                     let n = if neg { -n } else { n };
-                    Ok(hir::Lit::Float(n))
+
+                    let n = match suffix {
+                        Some(ast::NumberSuffix::Float(_, ast::NumberFloatSize::F32)) => {
+                            (n as f32) as f64
+                        }
+                        Some(ast::NumberSuffix::Float(_, ast::NumberFloatSize::F64)) => n,
+                        None => n,
+                        _ => n,
+                    };
+
+                    Ok(hir::Lit::Float(n as FloatType))
                 }
                 (ast::NumberValue::Integer(int), Some(ast::NumberSuffix::Unsigned(_, size))) => {
                     let int = if neg { int.neg() } else { int };
@@ -2733,24 +2758,47 @@ fn lit<'hir>(cx: &mut Ctxt<'hir, '_, '_>, p: &mut Stream<'_>) -> Result<hir::Lit
                         return Err(Error::new(lit, ErrorKind::BadUnsignedOutOfBounds { size }));
                     }
 
+                    let n: UnsignedType = match UnsignedType::try_from(n) {
+                        Ok(n) => n,
+                        Err(..) => {
+                            let size = if cfg!(feature = "number-32") {
+                                NumberSize::S32
+                            } else {
+                                size
+                            };
+                            return Err(Error::new(lit, ErrorKind::BadUnsignedOutOfBounds { size }));
+                        }
+                    };
+
                     Ok(hir::Lit::Unsigned(n))
                 }
                 (ast::NumberValue::Integer(int), Some(ast::NumberSuffix::Signed(_, size))) => {
                     let int = if neg { int.neg() } else { int };
 
-                    let Some(n) = int.to_u64() else {
-                        return Err(Error::new(lit, ErrorKind::BadUnsignedOutOfBounds { size }));
+                    let Some(n) = int.to_i64() else {
+                        return Err(Error::new(lit, ErrorKind::BadSignedOutOfBounds { size }));
                     };
 
-                    if !size.unsigned_in(n) {
-                        return Err(Error::new(lit, ErrorKind::BadUnsignedOutOfBounds { size }));
+                    if !size.signed_in(n) {
+                        return Err(Error::new(lit, ErrorKind::BadSignedOutOfBounds { size }));
                     }
 
-                    Ok(hir::Lit::Unsigned(n))
+                    let n: SignedType = match SignedType::try_from(n) {
+                        Ok(n) => n,
+                        Err(..) => {
+                            let size = if cfg!(feature = "number-32") {
+                                NumberSize::S32
+                            } else {
+                                size
+                            };
+                            return Err(Error::new(lit, ErrorKind::BadSignedOutOfBounds { size }));
+                        }
+                    };
+
+                    Ok(hir::Lit::Signed(n))
                 }
                 (ast::NumberValue::Integer(int), _) => {
                     let int = if neg { int.neg() } else { int };
-
                     let Some(n) = int.to_i64() else {
                         return Err(Error::new(
                             lit,
@@ -2760,14 +2808,14 @@ fn lit<'hir>(cx: &mut Ctxt<'hir, '_, '_>, p: &mut Stream<'_>) -> Result<hir::Lit
                         ));
                     };
 
-                    Ok(hir::Lit::Signed(n))
+                    Ok(hir::Lit::Signed(n as SignedType))
                 }
             }
         }
         K![byte] => {
             let lit = p.ast::<ast::LitByte>()?;
             let b = lit.resolve(resolve_context!(cx.q))?;
-            Ok(hir::Lit::Unsigned(b as u64))
+            Ok(hir::Lit::Unsigned(b as UnsignedType))
         }
         K![char] => {
             let lit = p.ast::<ast::LitChar>()?;

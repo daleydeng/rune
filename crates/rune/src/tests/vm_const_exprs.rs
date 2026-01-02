@@ -238,14 +238,29 @@ fn test_const_fn_visibility() {
 
 #[test]
 fn test_const_block() {
-    let result: i64 = rune! {
-        let u = 2;
-        let value = const { 1 << test() };
-        return value - u;
-        const fn test() { 32 }
-    };
+    #[cfg(feature = "number-32")]
+    {
+        let result: i64 = rune! {
+            let u = 2;
+            let value = const { 1 << test() };
+            return value - u;
+            const fn test() { 30 }
+        };
 
-    assert_eq!(result, (1i64 << 32) - 2);
+        assert_eq!(result, (1i64 << 30) - 2);
+    }
+
+    #[cfg(not(feature = "number-32"))]
+    {
+        let result: i64 = rune! {
+            let u = 2;
+            let value = const { 1 << test() };
+            return value - u;
+            const fn test() { 32 }
+        };
+
+        assert_eq!(result, (1i64 << 32) - 2);
+    }
 
     let result: String = rune! {
         let var = "World";

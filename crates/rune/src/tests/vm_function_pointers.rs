@@ -1,5 +1,7 @@
 prelude!();
 
+use crate::runtime::SignedType;
+
 /// Here we're constructing a unit-specific function pointer and ensuring that
 /// the vm execution can handle it correctly.
 #[test]
@@ -8,7 +10,7 @@ fn vm_execution_unit_fn() -> Result<()> {
 
     let function: Function = run(&context, "fn test() { 42 } test", (), true)?;
 
-    let output: i64 = run(&context, "pub fn main(f) { f() }", (function,), false)?;
+    let output: SignedType = run(&context, "pub fn main(f) { f() }", (function,), false)?;
 
     assert_eq!(42, output);
     Ok(())
@@ -19,7 +21,7 @@ fn vm_execution_unit_fn() -> Result<()> {
 #[test]
 fn vm_execution_with_complex_external() -> Result<()> {
     let mut m = Module::new();
-    m.function("external", || 42i64).build()?;
+    m.function("external", || SignedType::from(42)).build()?;
 
     let mut c1 = Context::with_default_modules()?;
     c1.install(m)?;
@@ -37,7 +39,7 @@ fn vm_execution_with_complex_external() -> Result<()> {
         true,
     )?;
 
-    let (o1, o2): (i64, i64) = run(
+    let (o1, o2): (SignedType, SignedType) = run(
         &c2,
         r#"
         pub fn main(f) {
@@ -72,7 +74,7 @@ fn test_external_generator() -> Result<()> {
         true,
     )?;
 
-    let output: (Option<i64>, Option<i64>) = run(
+    let output: (Option<SignedType>, Option<SignedType>) = run(
         &context,
         r#"
         pub fn main(f) { let gen = f(); (gen.next(), gen.next()) }

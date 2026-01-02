@@ -83,9 +83,22 @@ pub trait Any: TypeHash + Named + any::Any {
 /// [`Any`]: derive@crate::Any
 pub trait AnyMarker: Any {}
 
+// Built-in number types are special: they are supported by Rune even though
+// they do not use `#[derive(Any)]`.
+//
+// In 32-bit VM builds, the canonical numeric representation switches to 32-bit
+// primitives, so those must also act as built-in Rune types.
+#[cfg(feature = "number-32")]
+impl Any for i32 {}
+
+#[cfg(feature = "number-32")]
+impl Any for u32 {}
+
+#[cfg(feature = "number-32")]
+impl Any for f32 {}
+
 /// Macro to mark a value as external, which will implement all the appropriate
 /// traits.
-///
 /// This is required to support the external type as a type argument in a
 /// registered function.
 ///

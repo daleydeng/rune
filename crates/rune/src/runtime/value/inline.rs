@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use crate as rune;
 use crate::runtime::{
-    Hasher, OwnedTuple, Protocol, RuntimeError, Type, TypeInfo, VmErrorKind, VmIntegerRepr,
+    FloatType, Hasher, OwnedTuple, Protocol, RuntimeError, SignedType, Type, TypeInfo, UnsignedType,
+    VmErrorKind, VmIntegerRepr,
 };
 use crate::{Hash, TypeHash};
 
@@ -34,11 +35,11 @@ pub enum Inline {
     /// A character.
     Char(char),
     /// A number.
-    Signed(i64),
+    Signed(SignedType),
     /// An unsigned number.
-    Unsigned(u64),
+    Unsigned(UnsignedType),
     /// A float.
-    Float(f64),
+    Float(FloatType),
     /// A type hash. Describes a type in the virtual machine.
     Type(Type),
     /// Ordering.
@@ -54,10 +55,10 @@ pub enum Inline {
 impl Inline {
     pub(crate) fn as_integer<T>(self) -> Result<T, RuntimeError>
     where
-        T: TryFrom<u64> + TryFrom<i64>,
+        T: TryFrom<u128> + TryFrom<i128>,
     {
         match self {
-            Inline::Unsigned(value) => match value.try_into() {
+            Inline::Unsigned(value) => match u128::from(value).try_into() {
                 Ok(number) => Ok(number),
                 Err(..) => Err(RuntimeError::new(
                     VmErrorKind::ValueToIntegerCoercionError {
@@ -66,7 +67,7 @@ impl Inline {
                     },
                 )),
             },
-            Inline::Signed(value) => match value.try_into() {
+            Inline::Signed(value) => match i128::from(value).try_into() {
                 Ok(number) => Ok(number),
                 Err(..) => Err(RuntimeError::new(
                     VmErrorKind::ValueToIntegerCoercionError {
@@ -88,9 +89,9 @@ impl Inline {
             (Inline::Bool(a), Inline::Bool(b)) => Ok(*a == *b),
             (Inline::Char(a), Inline::Char(b)) => Ok(*a == *b),
             (Inline::Signed(a), Inline::Signed(b)) => Ok(*a == *b),
-            (Inline::Signed(a), rhs) => Ok(*a == rhs.as_integer::<i64>()?),
+            (Inline::Signed(a), rhs) => Ok(i128::from(*a) == rhs.as_integer::<i128>()?),
             (Inline::Unsigned(a), Inline::Unsigned(b)) => Ok(*a == *b),
-            (Inline::Unsigned(a), rhs) => Ok(*a == rhs.as_integer::<u64>()?),
+            (Inline::Unsigned(a), rhs) => Ok(u128::from(*a) == rhs.as_integer::<u128>()?),
             (Inline::Float(a), Inline::Float(b)) => Ok(*a == *b),
             (Inline::Type(a), Inline::Type(b)) => Ok(*a == *b),
             (Inline::Ordering(a), Inline::Ordering(b)) => Ok(*a == *b),
@@ -142,13 +143,13 @@ impl Inline {
             (Inline::Char(lhs), Inline::Char(rhs)) => Ok(lhs.partial_cmp(rhs)),
             (Inline::Unsigned(lhs), Inline::Unsigned(rhs)) => Ok(lhs.partial_cmp(rhs)),
             (Inline::Unsigned(lhs), rhs) => {
-                let rhs = rhs.as_integer::<u64>()?;
-                Ok(lhs.partial_cmp(&rhs))
+                let rhs = rhs.as_integer::<u128>()?;
+                Ok(u128::from(*lhs).partial_cmp(&rhs))
             }
             (Inline::Signed(lhs), Inline::Signed(rhs)) => Ok(lhs.partial_cmp(rhs)),
             (Inline::Signed(lhs), rhs) => {
-                let rhs = rhs.as_integer::<i64>()?;
-                Ok(lhs.partial_cmp(&rhs))
+                let rhs = rhs.as_integer::<i128>()?;
+                Ok(i128::from(*lhs).partial_cmp(&rhs))
             }
             (Inline::Float(lhs), Inline::Float(rhs)) => Ok(lhs.partial_cmp(rhs)),
             (Inline::Type(lhs), Inline::Type(rhs)) => Ok(lhs.partial_cmp(rhs)),
@@ -213,8 +214,8 @@ impl Inline {
                 }
 
                 let zero = *value == 0.0;
-                let value = ((zero as u8 as f64) * 0.0 + (!zero as u8 as f64) * *value).to_bits();
-                value.hash(hasher);
+                let rectified: FloatType = if zero { 0.0 as FloatType } else { *value };
+                rectified.to_bits().hash(hasher);
             }
             operand => {
                 return Err(RuntimeError::new(VmErrorKind::UnsupportedUnaryOperation {
@@ -252,9 +253,9 @@ impl Inline {
             Inline::Unit => TypeInfo::any::<OwnedTuple>(),
             Inline::Bool(..) => TypeInfo::named::<bool>(),
             Inline::Char(..) => TypeInfo::named::<char>(),
-            Inline::Unsigned(..) => TypeInfo::named::<u64>(),
-            Inline::Signed(..) => TypeInfo::named::<i64>(),
-            Inline::Float(..) => TypeInfo::named::<f64>(),
+            Inline::Unsigned(..) => TypeInfo::named::<UnsignedType>(),
+            Inline::Signed(..) => TypeInfo::named::<SignedType>(),
+            Inline::Float(..) => TypeInfo::named::<FloatType>(),
             Inline::Type(..) => TypeInfo::named::<Type>(),
             Inline::Ordering(..) => TypeInfo::named::<Ordering>(),
             Inline::Hash(..) => TypeInfo::named::<Hash>(),
@@ -271,9 +272,9 @@ impl Inline {
             Inline::Unit => OwnedTuple::HASH,
             Inline::Bool(..) => bool::HASH,
             Inline::Char(..) => char::HASH,
-            Inline::Signed(..) => i64::HASH,
-            Inline::Unsigned(..) => u64::HASH,
-            Inline::Float(..) => f64::HASH,
+            Inline::Signed(..) => SignedType::HASH,
+            Inline::Unsigned(..) => UnsignedType::HASH,
+            Inline::Float(..) => FloatType::HASH,
             Inline::Type(..) => Type::HASH,
             Inline::Ordering(..) => Ordering::HASH,
             Inline::Hash(..) => Hash::HASH,

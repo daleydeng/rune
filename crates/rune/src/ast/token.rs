@@ -274,7 +274,18 @@ pub enum NumberSuffix {
     /// The `i64` suffix.
     Signed(Span, NumberSize),
     /// The `f64` suffix.
-    Float(Span),
+    Float(Span, NumberFloatSize),
+}
+
+/// The float suffix of a number.
+#[derive(Debug, TryClone, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[try_clone(copy)]
+#[non_exhaustive]
+pub enum NumberFloatSize {
+    /// A 32-bit float (`f32`).
+    F32,
+    /// A 64-bit float (`f64`).
+    F64,
 }
 
 /// A resolved number literal.

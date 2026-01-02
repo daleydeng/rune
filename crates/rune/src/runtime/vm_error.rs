@@ -12,7 +12,7 @@ use crate::{vm_error, Any, Hash, ItemBuf};
 use super::{
     AccessError, AnyObjError, AnyObjErrorKind, AnySequenceTakeError, BoxedPanic, CallFrame,
     DynArgsUsed, ExecutionState, Panic, Protocol, SliceError, StackError, StaticString, StoreError,
-    StoreErrorKind, TypeInfo, TypeOf, Unit, Vm, VmHaltInfo,
+    StoreErrorKind, TypeInfo, TypeOf, Unit, Vm, VmHaltInfo, FloatType,
 };
 
 macro_rules! from_new {
@@ -673,11 +673,11 @@ pub(crate) enum VmErrorKind {
         target: TypeInfo,
     },
     IllegalFloatComparison {
-        lhs: f64,
-        rhs: f64,
+        lhs: FloatType,
+        rhs: FloatType,
     },
     IllegalFloatOperation {
-        value: f64,
+        value: FloatType,
     },
     MissingCallFrame,
     IllegalFormat,

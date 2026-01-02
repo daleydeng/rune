@@ -150,14 +150,14 @@ macro_rules! signed_value_from {
             impl From<$ty> for $crate::runtime::Value {
                 #[inline]
                 fn from(number: $ty) -> Self {
-                    $crate::runtime::Value::from(number as i64)
+                    $crate::runtime::Value::from(number as $crate::runtime::SignedType)
                 }
             }
 
             impl From<$ty> for $crate::runtime::ConstValue {
                 #[inline]
                 fn from(number: $ty) -> Self {
-                    $crate::runtime::ConstValue::from(number as i64)
+                    $crate::runtime::ConstValue::from(number as $crate::runtime::SignedType)
                 }
             }
         )*
@@ -172,12 +172,12 @@ macro_rules! signed_value_try_from {
 
                 #[inline]
                 fn try_from(value: $ty) -> Result<Self, $crate::runtime::RuntimeError> {
-                    match <i64>::try_from(value) {
+                    match <$crate::runtime::SignedType>::try_from(value) {
                         Ok(number) => Ok(Value::from(number)),
                         #[allow(unreachable_patterns)]
                         Err(..) => Err($crate::runtime::RuntimeError::from(VmErrorKind::IntegerToValueCoercionError {
                             from: VmIntegerRepr::from(value),
-                            to: any::type_name::<i64>(),
+                            to: any::type_name::<$crate::runtime::SignedType>(),
                         })),
                     }
                 }
@@ -188,12 +188,12 @@ macro_rules! signed_value_try_from {
 
                 #[inline]
                 fn try_from(value: $ty) -> Result<Self, $crate::runtime::RuntimeError> {
-                    match <i64>::try_from(value) {
+                    match <$crate::runtime::SignedType>::try_from(value) {
                         Ok(number) => Ok($crate::runtime::ConstValue::from(number)),
                         #[allow(unreachable_patterns)]
                         Err(..) => Err($crate::runtime::RuntimeError::from(VmErrorKind::IntegerToValueCoercionError {
                             from: VmIntegerRepr::from(value),
-                            to: any::type_name::<i64>(),
+                            to: any::type_name::<$crate::runtime::SignedType>(),
                         })),
                     }
                 }
@@ -230,14 +230,14 @@ macro_rules! unsigned_value_from {
             impl From<$ty> for Value {
                 #[inline]
                 fn from(number: $ty) -> Self {
-                    Value::from(number as u64)
+                    Value::from(number as $crate::runtime::UnsignedType)
                 }
             }
 
             impl From<$ty> for ConstValue {
                 #[inline]
                 fn from(number: $ty) -> Self {
-                    ConstValue::from(number as u64)
+                    ConstValue::from(number as $crate::runtime::UnsignedType)
                 }
             }
         )*
@@ -252,12 +252,12 @@ macro_rules! unsigned_value_try_from {
 
                 #[inline]
                 fn try_from(value: $ty) -> Result<Self, $crate::runtime::RuntimeError> {
-                    match <u64>::try_from(value) {
+                    match <$crate::runtime::UnsignedType>::try_from(value) {
                         Ok(number) => Ok(Value::from(number)),
                         #[allow(unreachable_patterns)]
                         Err(..) => Err($crate::runtime::RuntimeError::from(VmErrorKind::IntegerToValueCoercionError {
                             from: VmIntegerRepr::from(value),
-                            to: any::type_name::<u64>(),
+                            to: any::type_name::<$crate::runtime::UnsignedType>(),
                         })),
                     }
                 }
@@ -268,12 +268,12 @@ macro_rules! unsigned_value_try_from {
 
                 #[inline]
                 fn try_from(value: $ty) -> Result<Self, $crate::runtime::RuntimeError> {
-                    match <u64>::try_from(value) {
+                    match <$crate::runtime::UnsignedType>::try_from(value) {
                         Ok(number) => Ok($crate::runtime::ConstValue::from(number)),
                         #[allow(unreachable_patterns)]
                         Err(..) => Err($crate::runtime::RuntimeError::from(VmErrorKind::IntegerToValueCoercionError {
                             from: VmIntegerRepr::from(value),
-                            to: any::type_name::<u64>(),
+                            to: any::type_name::<$crate::runtime::UnsignedType>(),
                         })),
                     }
                 }
@@ -282,34 +282,35 @@ macro_rules! unsigned_value_try_from {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! float_value_trait {
     ($($ty:ty),* $(,)?) => {
         $(
             impl $crate::runtime::ToValue for $ty {
                 #[inline]
                 fn to_value(self) -> Result<Value, $crate::runtime::RuntimeError> {
-                    Ok($crate::runtime::Value::from(self as f64))
+                    Ok($crate::runtime::Value::from(self as $crate::runtime::FloatType))
                 }
             }
 
             impl From<$ty> for $crate::runtime::Value {
                 #[inline]
                 fn from(value: $ty) -> Value {
-                    $crate::runtime::Value::from(value as f64)
+                    $crate::runtime::Value::from(value as $crate::runtime::FloatType)
                 }
             }
 
             impl $crate::runtime::ToConstValue for $ty {
                 #[inline]
                 fn to_const_value(self) -> Result<$crate::runtime::ConstValue, $crate::runtime::RuntimeError> {
-                    Ok($crate::runtime::ConstValue::from(self as f64))
+                    Ok($crate::runtime::ConstValue::from(self as $crate::runtime::FloatType))
                 }
             }
 
             impl From<$ty> for $crate::runtime::ConstValue {
                 #[inline]
                 fn from(value: $ty) -> $crate::runtime::ConstValue {
-                    $crate::runtime::ConstValue::from(value as f64)
+                    $crate::runtime::ConstValue::from(value as $crate::runtime::FloatType)
                 }
             }
         )*

@@ -15,3 +15,17 @@ impl StepsBetween for u64 {
         usize::try_from(end.checked_sub(start)?).ok()
     }
 }
+
+impl StepsBetween for i32 {
+    #[inline]
+    fn steps_between(start: Self, end: Self) -> Option<usize> {
+        usize::try_from(end.checked_sub(start)?).ok()
+    }
+}
+
+impl StepsBetween for u32 {
+    #[inline]
+    fn steps_between(start: Self, end: Self) -> Option<usize> {
+        usize::try_from(end.checked_sub(start)?).ok()
+    }
+}

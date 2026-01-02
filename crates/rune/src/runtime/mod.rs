@@ -6,6 +6,8 @@ mod tests;
 #[macro_use]
 mod macros;
 
+pub use crate::number::{FloatType, SignedType, UnsignedType};
+
 mod steps_between;
 use self::steps_between::StepsBetween;
 

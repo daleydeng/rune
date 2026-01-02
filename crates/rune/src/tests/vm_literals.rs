@@ -112,12 +112,33 @@ fn test_number_literals() {
     // test_case!(42.4_2, f32);
     // test_case!(4_2.4_2, f32);
 
-    test_case!(1.9e10, f64);
-    test_case!(-1.9e10, f64);
+    #[cfg(feature = "number-32")]
+    {
+        let out: f64 = rune!(1.9e10);
+        assert_eq!(out, 1.9e10f32 as f64);
+
+        let out: f64 = rune!(-1.9e10);
+        assert_eq!(out, (-1.9e10f32) as f64);
+    }
+
+    #[cfg(not(feature = "number-32"))]
+    {
+        test_case!(1.9e10, f64);
+        test_case!(-1.9e10, f64);
+    }
 
     // TODO: we need a different float parsing routine to support _ in floats.
     // test_case!(1_.9e10, f64);
     // test_case!(1.9e1_0, f64);
 
-    test_case!(1e10, f64);
+    #[cfg(feature = "number-32")]
+    {
+        let out: f64 = rune!(1e10);
+        assert_eq!(out, 1e10f32 as f64);
+    }
+
+    #[cfg(not(feature = "number-32"))]
+    {
+        test_case!(1e10, f64);
+    }
 }

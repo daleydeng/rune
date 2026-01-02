@@ -9,6 +9,16 @@ use rune::runtime::{MaybeTypeOf, ToValue, Type, TypeOf};
 use rune::termcolor;
 use rune::{Any, Context, ContextError, Diagnostics, Module, Sources, Vm};
 
+#[cfg(feature = "number-32")]
+type TestInt = i32;
+#[cfg(not(feature = "number-32"))]
+type TestInt = i64;
+
+#[cfg(feature = "number-32")]
+type TestFloat = f32;
+#[cfg(not(feature = "number-32"))]
+type TestFloat = f64;
+
 #[derive(Any)]
 #[rune(item = ::native_crate)]
 struct Generic<T>
@@ -30,11 +40,11 @@ where
 
 fn make_native_module() -> Result<Module, ContextError> {
     let mut module = Module::with_crate("native_crate")?;
-    module.ty::<Generic<i64>>()?;
-    module.associated_function("get_value", Generic::<i64>::get_value)?;
+    module.ty::<Generic<TestInt>>()?;
+    module.associated_function("get_value", Generic::<TestInt>::get_value)?;
 
-    module.ty::<Generic<f64>>()?;
-    module.associated_function("get_value", Generic::<f64>::get_value)?;
+    module.ty::<Generic<TestFloat>>()?;
+    module.associated_function("get_value", Generic::<TestFloat>::get_value)?;
     Ok(module)
 }
 
@@ -67,14 +77,14 @@ fn compile(mut sources: Sources) -> Result<Vm> {
 #[test]
 fn test_generic() -> Result<()> {
     macro_rules! test {
-        ($($ty:ty, $function:ident, $function_ty:ident, $value:expr, $set:expr),+ $(,)?) => {
+        ($($ty:ty, $rune_ty:path, $function:ident, $function_ty:ident, $value:expr, $set:expr),+ $(,)?) => {
             let mut vm = compile(rune::sources! {
                 entry => {
                     pub fn get_value(v) { v.get_value() }
                     pub fn get_data(v) { v.data }
                     pub fn set_data(v, value) { v.data = value; }
-                    $(pub fn $function(v) { ::native_crate::Generic::<$ty>::get_value(v) })*
-                    $(pub fn $function_ty() { ::native_crate::Generic::<$ty> })*
+                    $(pub fn $function(v) { ::native_crate::Generic::<$rune_ty>::get_value(v) })*
+                    $(pub fn $function_ty() { ::native_crate::Generic::<$rune_ty> })*
                 }
             })?;
 
@@ -113,9 +123,16 @@ fn test_generic() -> Result<()> {
         };
     }
 
+    #[cfg(feature = "number-32")]
     test! {
-        i64, test_int, test_int_ty, 3, 30,
-        f64, test_float, test_float_ty, 2.0, 20.0,
+        i32, ::std::i32, test_int, test_int_ty, 3i32, 30i32,
+        f32, ::std::f32, test_float, test_float_ty, 2.0f32, 20.0f32,
+    };
+
+    #[cfg(not(feature = "number-32"))]
+    test! {
+        i64, ::std::i64, test_int, test_int_ty, 3i64, 30i64,
+        f64, ::std::f64, test_float, test_float_ty, 2.0f64, 20.0f64,
     };
 
     Ok(())

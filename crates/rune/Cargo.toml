@@ -34,6 +34,15 @@ alloc = ["rune-alloc/alloc", "rune-core/alloc", "once_cell/alloc", "serde?/alloc
 musli = ["dep:musli", "rune-core/musli", "rune-alloc/musli"]
 serde = ["dep:serde", "rune-alloc/serde", "relative-path?/serde"]
 
+# Configure Rune's VM number representation.
+#
+# When enabled, Rune uses 32-bit number types across the VM, compiler, `typeof`,
+# and host interop defaults:
+# - signed: `i32`
+# - unsigned: `u32`
+# - float: `f32`
+number-32 = []
+
 [dependencies]
 rune-macros = { version = "=0.14.0", path = "../rune-macros" }
 rune-core = { version = "=0.14.0", path = "../rune-core", features = [] }

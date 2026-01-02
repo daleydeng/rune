@@ -39,7 +39,7 @@ use super::{
     ConstValueKind, DynGuardedArgs, EnvProtocolCaller, Formatter, FromValue, Future, Hasher,
     Iterator, MaybeTypeOf, Mut, Object, OwnedTuple, Protocol, ProtocolCaller, RawAnyObjGuard, Ref,
     RuntimeError, Shared, Snapshot, Tuple, Type, TypeInfo, Vec, VmError, VmErrorKind,
-    VmIntegerRepr,
+    FloatType, SignedType, UnsignedType, VmIntegerRepr,
 };
 
 /// Defined guard for a reference value.
@@ -725,22 +725,22 @@ impl Value {
     }
 
     inline_into! {
-        /// Coerce into [`i64`] integer.
-        Signed(i64),
+        /// Coerce into [`SignedType`] integer.
+        Signed(SignedType),
         as_signed,
         as_signed_mut,
     }
 
     inline_into! {
-        /// Coerce into [`u64`] unsigned integer.
-        Unsigned(u64),
+        /// Coerce into [`UnsignedType`] unsigned integer.
+        Unsigned(UnsignedType),
         as_unsigned,
         as_unsigned_mut,
     }
 
     inline_into! {
-        /// Coerce into [`f64`] float.
-        Float(f64),
+        /// Coerce into [`FloatType`] float.
+        Float(FloatType),
         as_float,
         as_float_mut,
     }
@@ -1390,7 +1390,7 @@ impl Value {
     /// ```
     pub fn as_integer<T>(&self) -> Result<T, RuntimeError>
     where
-        T: TryFrom<u64> + TryFrom<i64>,
+        T: TryFrom<u128> + TryFrom<i128>,
     {
         match self.repr {
             Repr::Inline(value) => value.as_integer(),
@@ -1660,12 +1660,35 @@ impl TryFrom<&str> for Value {
     }
 }
 
+// Preserve common host interop conversions in 32-bit VM builds.
+// These are infallible `From` conversions, so we choose to panic on overflow
+// to avoid silent truncation.
+#[cfg(feature = "number-32")]
+impl From<i64> for Value {
+    #[inline]
+    fn from(value: i64) -> Self {
+        let value = i32::try_from(value)
+            .expect("i64 value out of range for number-32 (expected i32)");
+        Value::from(Inline::Signed(value))
+    }
+}
+
+#[cfg(feature = "number-32")]
+impl From<u64> for Value {
+    #[inline]
+    fn from(value: u64) -> Self {
+        let value = u32::try_from(value)
+            .expect("u64 value out of range for number-32 (expected u32)");
+        Value::from(Inline::Unsigned(value))
+    }
+}
+
 inline_from! {
     Bool => bool,
     Char => char,
-    Signed => i64,
-    Unsigned => u64,
-    Float => f64,
+    Signed => SignedType,
+    Unsigned => UnsignedType,
+    Float => FloatType,
     Type => Type,
     Ordering => Ordering,
     Hash => Hash,
@@ -1688,12 +1711,25 @@ any_from! {
     Result<Value, Value>,
 }
 
-signed_value_from!(i8, i16, i32);
+signed_value_from!(i8, i16);
+#[cfg(not(feature = "number-32"))]
+signed_value_from!(i32);
 signed_value_try_from!(i128, isize);
-unsigned_value_from!(u8, u16, u32);
+unsigned_value_from!(u8, u16);
+#[cfg(not(feature = "number-32"))]
+unsigned_value_from!(u32);
 unsigned_value_try_from!(u128, usize);
+#[cfg(not(feature = "number-32"))]
 signed_value_trait!(i8, i16, i32, i128, isize);
+#[cfg(feature = "number-32")]
+signed_value_trait!(i8, i16, i128, isize);
+
+#[cfg(not(feature = "number-32"))]
 unsigned_value_trait!(u8, u16, u32, u128, usize);
+#[cfg(feature = "number-32")]
+unsigned_value_trait!(u8, u16, u128, usize);
+
+#[cfg(not(feature = "number-32"))]
 float_value_trait!(f32);
 
 impl MaybeTypeOf for Value {

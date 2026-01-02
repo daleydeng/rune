@@ -364,13 +364,13 @@ impl Context {
         this.install(crate::modules::collections::vec_deque::module()?)?;
 
         this.install(crate::modules::char::module()?)?;
-        this.install(crate::modules::f64::module()?)?;
-        this.install(crate::modules::f64::consts::module()?)?;
+        this.install(crate::modules::float::module()?)?;
+        this.install(crate::modules::float::consts::module()?)?;
         this.install(crate::modules::tuple::module()?)?;
         this.install(crate::modules::fmt::module()?)?;
         this.install(crate::modules::future::module()?)?;
-        this.install(crate::modules::i64::module()?)?;
-        this.install(crate::modules::u64::module()?)?;
+        this.install(crate::modules::signed::module()?)?;
+        this.install(crate::modules::unsigned::module()?)?;
         this.install(crate::modules::io::module(stdio)?)?;
         this.install(crate::modules::macros::module()?)?;
         this.install(crate::modules::macros::builtin::module()?)?;

@@ -20,7 +20,7 @@ use crate::hir;
 use crate::indexing::index;
 use crate::macros::MacroContext;
 use crate::query::Used;
-use crate::runtime::{Inline, Value};
+use crate::runtime::{Inline, SignedType, Value};
 
 pub(crate) use self::compiler::Ctxt;
 pub(crate) use self::eval::{eval_ir, EvalOutcome};
@@ -544,7 +544,7 @@ impl IrAssignOp {
     }
 
     /// Perform the given assign operation.
-    fn assign_int<S>(self, spanned: S, target: &mut i64, operand: i64) -> compile::Result<()>
+    fn assign_int<S>(self, spanned: S, target: &mut SignedType, operand: SignedType) -> compile::Result<()>
     where
         S: Copy + Spanned,
     {

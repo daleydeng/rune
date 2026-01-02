@@ -50,12 +50,24 @@ impl Named for i64 {
     const ITEM: &'static Item = item!(::std::i64);
 }
 
+impl Named for i32 {
+    const ITEM: &'static Item = item!(::std::i32);
+}
+
 impl Named for u64 {
     const ITEM: &'static Item = item!(::std::u64);
 }
 
+impl Named for u32 {
+    const ITEM: &'static Item = item!(::std::u32);
+}
+
 impl Named for f64 {
     const ITEM: &'static Item = item!(::std::f64);
+}
+
+impl Named for f32 {
+    const ITEM: &'static Item = item!(::std::f32);
 }
 
 impl Named for char {

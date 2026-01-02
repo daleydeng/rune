@@ -12,7 +12,7 @@ use crate::alloc;
 use crate::alloc::prelude::*;
 use crate::Hash;
 
-use super::{Call, FormatSpec, Type, Value};
+use super::{Call, FloatType, FormatSpec, SignedType, Type, UnsignedType, Value};
 
 /// An instruction in the virtual machine.
 #[derive(Clone, Copy)]
@@ -751,7 +751,7 @@ pub(crate) enum Kind {
         /// Address of the value to compare.
         addr: Address,
         /// The value to test against.
-        value: i64,
+        value: SignedType,
         /// Where to store the result of the comparison.
         out: Output,
     },
@@ -761,7 +761,7 @@ pub(crate) enum Kind {
         /// Address of the value to compare.
         addr: Address,
         /// The value to test against.
-        value: u64,
+        value: UnsignedType,
         /// Where to store the result of the comparison.
         out: Output,
     },
@@ -1035,7 +1035,7 @@ impl Kind {
     }
 
     /// Construct an instruction to push an integer.
-    pub(crate) fn signed(v: i64, out: Output) -> Self {
+    pub(crate) fn signed(v: SignedType, out: Output) -> Self {
         Self::Store {
             value: InstValue::Integer(v),
             out,
@@ -1043,7 +1043,7 @@ impl Kind {
     }
 
     /// Construct an instruction to push an unsigned integer.
-    pub(crate) fn unsigned(v: u64, out: Output) -> Self {
+    pub(crate) fn unsigned(v: UnsignedType, out: Output) -> Self {
         Self::Store {
             value: InstValue::Unsigned(v),
             out,
@@ -1051,7 +1051,7 @@ impl Kind {
     }
 
     /// Construct an instruction to push a float.
-    pub(crate) fn float(v: f64, out: Output) -> Self {
+    pub(crate) fn float(v: FloatType, out: Output) -> Self {
         Self::Store {
             value: InstValue::Float(v),
             out,
@@ -1525,13 +1525,13 @@ pub(crate) enum InstValue {
     Char(char),
     /// An unsigned integer.
     #[cfg_attr(feature = "musli", musli(packed))]
-    Unsigned(u64),
+    Unsigned(UnsignedType),
     /// An integer.
     #[cfg_attr(feature = "musli", musli(packed))]
-    Integer(i64),
+    Integer(SignedType),
     /// A float.
     #[cfg_attr(feature = "musli", musli(packed))]
-    Float(f64),
+    Float(FloatType),
     /// A type hash.
     #[cfg_attr(feature = "musli", musli(packed))]
     Type(Type),
@@ -1569,8 +1569,20 @@ impl fmt::Display for InstValue {
             Self::Unit => write!(f, "()")?,
             Self::Bool(v) => write!(f, "{v}")?,
             Self::Char(v) => write!(f, "{v:?}")?,
-            Self::Unsigned(v) => write!(f, "{v}u64")?,
-            Self::Integer(v) => write!(f, "{v}i64")?,
+            Self::Unsigned(v) => {
+                if cfg!(feature = "number-32") {
+                    write!(f, "{v}u32")?;
+                } else {
+                    write!(f, "{v}u64")?;
+                }
+            }
+            Self::Integer(v) => {
+                if cfg!(feature = "number-32") {
+                    write!(f, "{v}i32")?;
+                } else {
+                    write!(f, "{v}i64")?;
+                }
+            }
             Self::Float(v) => write!(f, "{v}")?,
             Self::Type(v) => write!(f, "{}", v.into_hash())?,
             Self::Ordering(v) => write!(f, "{v:?}")?,

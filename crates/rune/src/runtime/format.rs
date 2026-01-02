@@ -15,7 +15,9 @@ use crate as rune;
 use crate::alloc::clone::TryClone;
 use crate::alloc::fmt::TryWrite;
 use crate::alloc::{self, String};
-use crate::runtime::{Formatter, Inline, ProtocolCaller, Repr, Value, VmError, VmErrorKind};
+use crate::runtime::{
+    FloatType, Formatter, Inline, ProtocolCaller, Repr, SignedType, Value, VmError, VmErrorKind,
+};
 use crate::{Any, TypeHash};
 
 /// Error raised when trying to parse a type string and it fails.
@@ -94,7 +96,7 @@ impl FormatSpec {
     }
 
     /// get traits out of a floating point number.
-    fn float_traits(&self, n: f64) -> (f64, Alignment, char, Option<char>) {
+    fn float_traits(&self, n: FloatType) -> (FloatType, Alignment, char, Option<char>) {
         if self.flags.test(Flag::SignAwareZeroPad) {
             if n.is_sign_negative() {
                 (-n, Alignment::Right, '0', Some('-'))
@@ -109,7 +111,7 @@ impl FormatSpec {
     }
 
     /// get traits out of an integer.
-    fn int_traits(&self, n: i64) -> (i64, Alignment, char, Option<char>) {
+    fn int_traits(&self, n: SignedType) -> (SignedType, Alignment, char, Option<char>) {
         if self.flags.test(Flag::SignAwareZeroPad) {
             if n < 0 {
                 (-n, Alignment::Right, '0', Some('-'))
@@ -124,14 +126,14 @@ impl FormatSpec {
     }
 
     /// Format the given number.
-    fn format_number(&self, buf: &mut String, n: i64) -> alloc::Result<()> {
+    fn format_number(&self, buf: &mut String, n: SignedType) -> alloc::Result<()> {
         let mut buffer = itoa::Buffer::new();
         buf.try_push_str(buffer.format(n))?;
         Ok(())
     }
 
     /// Format the given float.
-    fn format_float(&self, buf: &mut String, n: f64) -> alloc::Result<()> {
+    fn format_float(&self, buf: &mut String, n: FloatType) -> alloc::Result<()> {
         if let Some(precision) = self.precision {
             write!(buf, "{:.*}", precision.get(), n)?;
         } else {

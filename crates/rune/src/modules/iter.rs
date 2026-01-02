@@ -521,7 +521,7 @@ pub fn module() -> Result<Module, ContextError> {
                     cx.function(Params::new("product", [<$ty>::HASH]), |iter: Value| {
                         let mut product = match iter.protocol_next()? {
                             Some(init) => <$ty>::from_value(init)?,
-                            None => <$ty>::ONE,
+                            None => <$ty as CheckedOps>::ONE,
                         };
 
                         while let Some(v) = iter.protocol_next()? {
@@ -544,7 +544,7 @@ pub fn module() -> Result<Module, ContextError> {
                         |iter: Value| -> Result<$ty, VmError> {
                             let mut sum = match iter.protocol_next()? {
                                 Some(init) => <$ty>::from_value(init)?,
-                                None => <$ty>::ZERO,
+                                None => <$ty as CheckedOps>::ZERO,
                             };
 
                             while let Some(v) = iter.protocol_next()? {
@@ -563,9 +563,19 @@ pub fn module() -> Result<Module, ContextError> {
                 }};
             }
 
-            ops!(u64);
-            ops!(i64);
-            ops!(f64);
+            #[cfg(not(feature = "number-32"))]
+            {
+                ops!(u64);
+                ops!(i64);
+                ops!(f64);
+            }
+
+            #[cfg(feature = "number-32")]
+            {
+                ops!(u32);
+                ops!(i32);
+                ops!(f32);
+            }
             Ok(())
         })?;
 
@@ -1942,7 +1952,10 @@ impl Once {
 /// assert_eq!(range(0, 3).collect::<Vec>(), [0, 1, 2]);
 /// ```
 #[rune::function(deprecated = "Use the `<from>..<to>` operator instead")]
-fn range(start: i64, end: i64) -> RangeIter<i64> {
+fn range(
+    start: crate::runtime::SignedType,
+    end: crate::runtime::SignedType,
+) -> RangeIter<crate::runtime::SignedType> {
     RangeIter::new(start..end)
 }
 
@@ -2577,6 +2590,21 @@ impl CheckedOps for i64 {
     }
 }
 
+impl CheckedOps for i32 {
+    const ONE: Self = 1;
+    const ZERO: Self = 0;
+
+    #[inline]
+    fn checked_add(self, value: Self) -> Option<Self> {
+        i32::checked_add(self, value)
+    }
+
+    #[inline]
+    fn checked_mul(self, value: Self) -> Option<Self> {
+        i32::checked_mul(self, value)
+    }
+}
+
 impl CheckedOps for u64 {
     const ONE: Self = 1;
     const ZERO: Self = 0;
@@ -2592,7 +2620,37 @@ impl CheckedOps for u64 {
     }
 }
 
+impl CheckedOps for u32 {
+    const ONE: Self = 1;
+    const ZERO: Self = 0;
+
+    #[inline]
+    fn checked_add(self, value: Self) -> Option<Self> {
+        u32::checked_add(self, value)
+    }
+
+    #[inline]
+    fn checked_mul(self, value: Self) -> Option<Self> {
+        u32::checked_mul(self, value)
+    }
+}
+
 impl CheckedOps for f64 {
+    const ONE: Self = 1.0;
+    const ZERO: Self = 0.0;
+
+    #[inline]
+    fn checked_add(self, value: Self) -> Option<Self> {
+        Some(self + value)
+    }
+
+    #[inline]
+    fn checked_mul(self, value: Self) -> Option<Self> {
+        Some(self * value)
+    }
+}
+
+impl CheckedOps for f32 {
     const ONE: Self = 1.0;
     const ZERO: Self = 0.0;
 

@@ -80,8 +80,17 @@ fn test_strings() {
 
 #[test]
 fn test_float_formatting() {
-    test_case!("{:.10}", 3.1415);
-    test_case!("{:.*}", 10, 3.1415);
+    #[cfg(feature = "number-32")]
+    {
+        test_case!("{:.10}", 3.1415f32);
+        test_case!("{:.*}", 10, 3.1415f32);
+    }
+
+    #[cfg(not(feature = "number-32"))]
+    {
+        test_case!("{:.10}", 3.1415);
+        test_case!("{:.*}", 10, 3.1415);
+    }
 }
 
 #[test]

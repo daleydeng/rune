@@ -18,7 +18,7 @@ use super::{AnyTypeInfo, Mut, Ref, TypeInfo};
 /// ```
 /// use rune::TypeHash;
 ///
-/// assert_eq!(<&str>::HASH, String::HASH);
+/// assert_eq!(<&str as TypeHash>::HASH, <String as TypeHash>::HASH);
 /// ```
 ///
 /// [`HASH`]: TypeHash::HASH
@@ -31,15 +31,16 @@ pub trait TypeHash {
     ///
     /// ```
     /// use rune::TypeHash;
+    /// use rune::number::SignedType;
     ///
-    /// assert_ne!(String::HASH, i64::HASH);
+    /// assert_ne!(<String as TypeHash>::HASH, <SignedType as TypeHash>::HASH);
     ///
     /// fn is_a_string<T>() -> bool where T: TypeHash {
-    ///     matches!(T::HASH, String::HASH)
+    ///     matches!(T::HASH, <String as TypeHash>::HASH)
     /// }
     ///
     /// assert!(is_a_string::<String>());
-    /// assert!(!is_a_string::<i64>());
+    /// assert!(!is_a_string::<SignedType>());
     /// ```
     const HASH: Hash;
 }

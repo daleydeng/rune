@@ -136,17 +136,17 @@ macro_rules! unsigned_fns {
             str::parse::<$ty>(s)
         }
 
-        #[doc = concat!(" Converts an `", $n, "` to a `f64`.")]
+        #[doc = concat!(" Converts an `", $n, "` to a float.")]
         ///
         /// # Examples
         ///
         /// ```rune
         #[doc = concat!(" assert!(10", $n, ".to::<f64>() is f64);")]
         /// ```
-        #[rune::function(instance, path = to::<f64>)]
+        #[rune::function(instance, path = to::<crate::runtime::FloatType>)]
         #[inline]
-        fn to_float(value: $ty) -> f64 {
-            value as f64
+        fn to_float(value: $ty) -> crate::runtime::FloatType {
+            value as crate::runtime::FloatType
         }
 
         /// Compares and returns the maximum of two values.

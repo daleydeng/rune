@@ -2,14 +2,17 @@ use core::ops::{
     Add, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, Mul, Rem, Sub,
 };
 
-use crate::runtime::{InstArithmeticOp, InstBitwiseOp, InstShiftOp, Protocol, VmErrorKind};
+use crate::runtime::{
+    FloatType, InstArithmeticOp, InstBitwiseOp, InstShiftOp, Protocol, SignedType, UnsignedType,
+    VmErrorKind,
+};
 
 pub(super) struct ArithmeticOps {
     pub(super) protocol: Protocol,
     pub(super) error: fn() -> VmErrorKind,
-    pub(super) i64: fn(i64, i64) -> Option<i64>,
-    pub(super) u64: fn(u64, u64) -> Option<u64>,
-    pub(super) f64: fn(f64, f64) -> f64,
+    pub(super) signed: fn(SignedType, SignedType) -> Option<SignedType>,
+    pub(super) unsigned: fn(UnsignedType, UnsignedType) -> Option<UnsignedType>,
+    pub(super) float: fn(FloatType, FloatType) -> FloatType,
 }
 
 impl ArithmeticOps {
@@ -18,37 +21,37 @@ impl ArithmeticOps {
             InstArithmeticOp::Add => &Self {
                 protocol: Protocol::ADD,
                 error: || VmErrorKind::Overflow,
-                i64: i64::checked_add,
-                u64: u64::checked_add,
-                f64: f64::add,
+                signed: SignedType::checked_add,
+                unsigned: UnsignedType::checked_add,
+                float: FloatType::add,
             },
             InstArithmeticOp::Sub => &Self {
                 protocol: Protocol::SUB,
                 error: || VmErrorKind::Underflow,
-                i64: i64::checked_sub,
-                u64: u64::checked_sub,
-                f64: f64::sub,
+                signed: SignedType::checked_sub,
+                unsigned: UnsignedType::checked_sub,
+                float: FloatType::sub,
             },
             InstArithmeticOp::Mul => &Self {
                 protocol: Protocol::MUL,
                 error: || VmErrorKind::Overflow,
-                i64: i64::checked_mul,
-                u64: u64::checked_mul,
-                f64: f64::mul,
+                signed: SignedType::checked_mul,
+                unsigned: UnsignedType::checked_mul,
+                float: FloatType::mul,
             },
             InstArithmeticOp::Div => &Self {
                 protocol: Protocol::DIV,
                 error: || VmErrorKind::DivideByZero,
-                i64: i64::checked_div,
-                u64: u64::checked_div,
-                f64: f64::div,
+                signed: SignedType::checked_div,
+                unsigned: UnsignedType::checked_div,
+                float: FloatType::div,
             },
             InstArithmeticOp::Rem => &Self {
                 protocol: Protocol::REM,
                 error: || VmErrorKind::DivideByZero,
-                i64: i64::checked_rem,
-                u64: u64::checked_rem,
-                f64: f64::rem,
+                signed: SignedType::checked_rem,
+                unsigned: UnsignedType::checked_rem,
+                float: FloatType::rem,
             },
         }
     }
@@ -57,9 +60,9 @@ impl ArithmeticOps {
 pub(super) struct AssignArithmeticOps {
     pub(super) protocol: Protocol,
     pub(super) error: fn() -> VmErrorKind,
-    pub(super) i64: fn(i64, i64) -> Option<i64>,
-    pub(super) u64: fn(u64, u64) -> Option<u64>,
-    pub(super) f64: fn(f64, f64) -> f64,
+    pub(super) signed: fn(SignedType, SignedType) -> Option<SignedType>,
+    pub(super) unsigned: fn(UnsignedType, UnsignedType) -> Option<UnsignedType>,
+    pub(super) float: fn(FloatType, FloatType) -> FloatType,
 }
 
 impl AssignArithmeticOps {
@@ -68,37 +71,37 @@ impl AssignArithmeticOps {
             InstArithmeticOp::Add => &Self {
                 protocol: Protocol::ADD_ASSIGN,
                 error: || VmErrorKind::Overflow,
-                i64: i64::checked_add,
-                u64: u64::checked_add,
-                f64: f64::add,
+                signed: SignedType::checked_add,
+                unsigned: UnsignedType::checked_add,
+                float: FloatType::add,
             },
             InstArithmeticOp::Sub => &Self {
                 protocol: Protocol::SUB_ASSIGN,
                 error: || VmErrorKind::Underflow,
-                i64: i64::checked_sub,
-                u64: u64::checked_sub,
-                f64: f64::sub,
+                signed: SignedType::checked_sub,
+                unsigned: UnsignedType::checked_sub,
+                float: FloatType::sub,
             },
             InstArithmeticOp::Mul => &Self {
                 protocol: Protocol::MUL_ASSIGN,
                 error: || VmErrorKind::Overflow,
-                i64: i64::checked_mul,
-                u64: u64::checked_mul,
-                f64: f64::mul,
+                signed: SignedType::checked_mul,
+                unsigned: UnsignedType::checked_mul,
+                float: FloatType::mul,
             },
             InstArithmeticOp::Div => &Self {
                 protocol: Protocol::DIV_ASSIGN,
                 error: || VmErrorKind::DivideByZero,
-                i64: i64::checked_div,
-                u64: u64::checked_div,
-                f64: f64::div,
+                signed: SignedType::checked_div,
+                unsigned: UnsignedType::checked_div,
+                float: FloatType::div,
             },
             InstArithmeticOp::Rem => &Self {
                 protocol: Protocol::REM_ASSIGN,
                 error: || VmErrorKind::DivideByZero,
-                i64: i64::checked_rem,
-                u64: u64::checked_rem,
-                f64: f64::rem,
+                signed: SignedType::checked_rem,
+                unsigned: UnsignedType::checked_rem,
+                float: FloatType::rem,
             },
         }
     }
@@ -106,8 +109,8 @@ impl AssignArithmeticOps {
 
 pub(super) struct AssignBitwiseOps {
     pub(super) protocol: Protocol,
-    pub(super) i64: fn(&mut i64, i64),
-    pub(super) u64: fn(&mut u64, u64),
+    pub(super) signed: fn(&mut SignedType, SignedType),
+    pub(super) unsigned: fn(&mut UnsignedType, UnsignedType),
     pub(super) bool: fn(&mut bool, bool),
 }
 
@@ -116,20 +119,20 @@ impl AssignBitwiseOps {
         match op {
             InstBitwiseOp::BitAnd => &Self {
                 protocol: Protocol::BIT_AND_ASSIGN,
-                i64: i64::bitand_assign,
-                u64: u64::bitand_assign,
+                signed: SignedType::bitand_assign,
+                unsigned: UnsignedType::bitand_assign,
                 bool: bool::bitand_assign,
             },
             InstBitwiseOp::BitXor => &Self {
                 protocol: Protocol::BIT_XOR_ASSIGN,
-                i64: i64::bitxor_assign,
-                u64: u64::bitxor_assign,
+                signed: SignedType::bitxor_assign,
+                unsigned: UnsignedType::bitxor_assign,
                 bool: bool::bitxor_assign,
             },
             InstBitwiseOp::BitOr => &Self {
                 protocol: Protocol::BIT_OR_ASSIGN,
-                i64: i64::bitor_assign,
-                u64: u64::bitor_assign,
+                signed: SignedType::bitor_assign,
+                unsigned: UnsignedType::bitor_assign,
                 bool: bool::bitor_assign,
             },
         }
@@ -138,8 +141,8 @@ impl AssignBitwiseOps {
 
 pub(super) struct BitwiseOps {
     pub(super) protocol: Protocol,
-    pub(super) i64: fn(i64, i64) -> i64,
-    pub(super) u64: fn(u64, u64) -> u64,
+    pub(super) signed: fn(SignedType, SignedType) -> SignedType,
+    pub(super) unsigned: fn(UnsignedType, UnsignedType) -> UnsignedType,
     pub(super) bool: fn(bool, bool) -> bool,
 }
 
@@ -148,20 +151,20 @@ impl BitwiseOps {
         match op {
             InstBitwiseOp::BitAnd => &BitwiseOps {
                 protocol: Protocol::BIT_AND,
-                i64: i64::bitand,
-                u64: u64::bitand,
+                signed: SignedType::bitand,
+                unsigned: UnsignedType::bitand,
                 bool: bool::bitand,
             },
             InstBitwiseOp::BitXor => &BitwiseOps {
                 protocol: Protocol::BIT_XOR,
-                i64: i64::bitxor,
-                u64: u64::bitxor,
+                signed: SignedType::bitxor,
+                unsigned: UnsignedType::bitxor,
                 bool: bool::bitxor,
             },
             InstBitwiseOp::BitOr => &BitwiseOps {
                 protocol: Protocol::BIT_OR,
-                i64: i64::bitor,
-                u64: u64::bitor,
+                signed: SignedType::bitor,
+                unsigned: UnsignedType::bitor,
                 bool: bool::bitor,
             },
         }
@@ -171,8 +174,8 @@ impl BitwiseOps {
 pub(super) struct AssignShiftOps {
     pub(super) protocol: Protocol,
     pub(super) error: fn() -> VmErrorKind,
-    pub(super) i64: fn(i64, u32) -> Option<i64>,
-    pub(super) u64: fn(u64, u32) -> Option<u64>,
+    pub(super) signed: fn(SignedType, u32) -> Option<SignedType>,
+    pub(super) unsigned: fn(UnsignedType, u32) -> Option<UnsignedType>,
 }
 
 impl AssignShiftOps {
@@ -181,14 +184,14 @@ impl AssignShiftOps {
             InstShiftOp::Shl => &Self {
                 protocol: Protocol::SHL_ASSIGN,
                 error: || VmErrorKind::Overflow,
-                i64: i64::checked_shl,
-                u64: u64::checked_shl,
+                signed: SignedType::checked_shl,
+                unsigned: UnsignedType::checked_shl,
             },
             InstShiftOp::Shr => &Self {
                 protocol: Protocol::SHR_ASSIGN,
                 error: || VmErrorKind::Underflow,
-                i64: i64::checked_shr,
-                u64: u64::checked_shr,
+                signed: SignedType::checked_shr,
+                unsigned: UnsignedType::checked_shr,
             },
         }
     }
@@ -197,8 +200,8 @@ impl AssignShiftOps {
 pub(super) struct ShiftOps {
     pub(super) protocol: Protocol,
     pub(super) error: fn() -> VmErrorKind,
-    pub(super) i64: fn(i64, u32) -> Option<i64>,
-    pub(super) u64: fn(u64, u32) -> Option<u64>,
+    pub(super) signed: fn(SignedType, u32) -> Option<SignedType>,
+    pub(super) unsigned: fn(UnsignedType, u32) -> Option<UnsignedType>,
 }
 
 impl ShiftOps {
@@ -207,14 +210,14 @@ impl ShiftOps {
             InstShiftOp::Shl => &Self {
                 protocol: Protocol::SHL,
                 error: || VmErrorKind::Overflow,
-                i64: i64::checked_shl,
-                u64: u64::checked_shl,
+                signed: SignedType::checked_shl,
+                unsigned: UnsignedType::checked_shl,
             },
             InstShiftOp::Shr => &Self {
                 protocol: Protocol::SHR,
                 error: || VmErrorKind::Underflow,
-                i64: i64::checked_shr,
-                u64: u64::checked_shr,
+                signed: SignedType::checked_shr,
+                unsigned: UnsignedType::checked_shr,
             },
         }
     }

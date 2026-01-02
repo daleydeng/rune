@@ -237,7 +237,7 @@ pub use self::stmt::{ItemOrExpr, Stmt, StmtSemi, StmtSortKey};
 pub(crate) use self::to_ast::ToAst;
 pub use self::token::{
     BuiltIn, CopySource, Delimiter, LitSource, Number, NumberBase, NumberSize, NumberSource,
-    NumberSuffix, NumberText, NumberValue, StrSource, StrText, Token,
+    NumberFloatSize, NumberSuffix, NumberText, NumberValue, StrSource, StrText, Token,
 };
 pub use self::vis::Visibility;
 

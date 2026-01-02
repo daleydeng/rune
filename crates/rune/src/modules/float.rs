@@ -4,114 +4,133 @@ use core::cmp::Ordering;
 use core::num::ParseFloatError;
 
 use crate as rune;
-use crate::runtime::{VmError, VmErrorKind};
+use crate::runtime::{FloatType, VmError, VmErrorKind};
 use crate::{docstring, ContextError, Module};
+
+type Float = FloatType;
 
 /// Mathematical constants mirroring Rust's [core::f64::consts].
 pub mod consts {
     use crate as rune;
     use crate::{docstring, ContextError, Module};
 
+    #[cfg(feature = "number-32")]
+    use core::f32::consts as float_consts;
+    #[cfg(not(feature = "number-32"))]
+    use core::f64::consts as float_consts;
+
     /// Mathematical constants mirroring Rust's [core::f64::consts].
+    #[cfg(not(feature = "number-32"))]
     #[rune::module(::std::f64::consts)]
     pub fn module() -> Result<Module, ContextError> {
+        module_impl()
+    }
+
+    /// Mathematical constants mirroring Rust's [core::f32::consts].
+    #[cfg(feature = "number-32")]
+    #[rune::module(::std::f32::consts)]
+    pub fn module() -> Result<Module, ContextError> {
+        module_impl()
+    }
+
+    fn module_impl() -> Result<Module, ContextError> {
         let mut m = Module::from_meta(self::module__meta)?;
 
-        m.constant("E", core::f64::consts::E)
+        m.constant("E", float_consts::E)
             .build()?
             .docs(docstring!(
                 /// Euler's number (e)
             ))?;
 
-        m.constant("FRAC_1_PI", core::f64::consts::FRAC_1_PI)
+        m.constant("FRAC_1_PI", float_consts::FRAC_1_PI)
             .build()?
             .docs(docstring!(
                 /// 1 / π
             ))?;
-        m.constant("FRAC_1_SQRT_2", core::f64::consts::FRAC_1_SQRT_2)
+        m.constant("FRAC_1_SQRT_2", float_consts::FRAC_1_SQRT_2)
             .build()?
             .docs(docstring!(
                 /// 1 / sqrt(2)
             ))?;
-        m.constant("FRAC_2_PI", core::f64::consts::FRAC_2_PI)
+        m.constant("FRAC_2_PI", float_consts::FRAC_2_PI)
             .build()?
             .docs(docstring!(
                 /// 2 / π
             ))?;
-        m.constant("FRAC_2_SQRT_PI", core::f64::consts::FRAC_2_SQRT_PI)
+        m.constant("FRAC_2_SQRT_PI", float_consts::FRAC_2_SQRT_PI)
             .build()?
             .docs(docstring!(
                 /// 2 / sqrt(π)
             ))?;
 
-        m.constant("FRAC_PI_2", core::f64::consts::FRAC_PI_2)
+        m.constant("FRAC_PI_2", float_consts::FRAC_PI_2)
             .build()?
             .docs(docstring!(
                 /// π/2
             ))?;
-        m.constant("FRAC_PI_3", core::f64::consts::FRAC_PI_3)
+        m.constant("FRAC_PI_3", float_consts::FRAC_PI_3)
             .build()?
             .docs(docstring!(
                 /// π/3
             ))?;
-        m.constant("FRAC_PI_4", core::f64::consts::FRAC_PI_4)
+        m.constant("FRAC_PI_4", float_consts::FRAC_PI_4)
             .build()?
             .docs(docstring!(
                 /// π/4
             ))?;
-        m.constant("FRAC_PI_6", core::f64::consts::FRAC_PI_6)
+        m.constant("FRAC_PI_6", float_consts::FRAC_PI_6)
             .build()?
             .docs(docstring!(
                 /// π/6
             ))?;
-        m.constant("FRAC_PI_8", core::f64::consts::FRAC_PI_8)
+        m.constant("FRAC_PI_8", float_consts::FRAC_PI_8)
             .build()?
             .docs(docstring!(
                 /// π/8
             ))?;
 
-        m.constant("LN_2", core::f64::consts::LN_2)
+        m.constant("LN_2", float_consts::LN_2)
             .build()?
             .docs(docstring!(
                 /// ln(2)
             ))?;
-        m.constant("LN_10", core::f64::consts::LN_10)
+        m.constant("LN_10", float_consts::LN_10)
             .build()?
             .docs(docstring!(
                 /// ln(10)
             ))?;
-        m.constant("LOG2_10", core::f64::consts::LOG2_10)
+        m.constant("LOG2_10", float_consts::LOG2_10)
             .build()?
             .docs(docstring!(
                 /// log<sub>2</sub>(10)
             ))?;
-        m.constant("LOG2_E", core::f64::consts::LOG2_E)
+        m.constant("LOG2_E", float_consts::LOG2_E)
             .build()?
             .docs(docstring!(
                 /// log<sub>2</sub>(e)
             ))?;
-        m.constant("LOG10_2", core::f64::consts::LOG10_2)
+        m.constant("LOG10_2", float_consts::LOG10_2)
             .build()?
             .docs(docstring!(
                 /// log<sub>10</sub>(2)
             ))?;
-        m.constant("LOG10_E", core::f64::consts::LOG10_E)
+        m.constant("LOG10_E", float_consts::LOG10_E)
             .build()?
             .docs(docstring!(
                 /// log<sub>10</sub>(e)
             ))?;
 
-        m.constant("PI", core::f64::consts::PI)
+        m.constant("PI", float_consts::PI)
             .build()?
             .docs(docstring!(
                 /// Archimede's constant (π)
             ))?;
-        m.constant("SQRT_2", core::f64::consts::SQRT_2)
+        m.constant("SQRT_2", float_consts::SQRT_2)
             .build()?
             .docs(docstring!(
                 /// sqrt(2)
             ))?;
-        m.constant("TAU", core::f64::consts::TAU)
+        m.constant("TAU", float_consts::TAU)
             .build()?
             .docs(docstring!(
                 /// The full circle constant (τ)
@@ -127,12 +146,30 @@ pub mod consts {
 ///
 /// This provides methods for computing over and parsing 64-bit floating pointer
 /// numbers.
+#[cfg(not(feature = "number-32"))]
 #[rune::module(::std::f64)]
 pub fn module() -> Result<Module, ContextError> {
+    module_impl()
+}
+
+/// Floating point numbers.
+///
+/// This provides methods for computing over and parsing 32-bit floating pointer
+/// numbers.
+#[cfg(feature = "number-32")]
+#[rune::module(::std::f32)]
+pub fn module() -> Result<Module, ContextError> {
+    module_impl()
+}
+
+fn module_impl() -> Result<Module, ContextError> {
     let mut m = Module::from_meta(self::module__meta)?;
 
-    m.function_meta(parse)?
-        .deprecated("Use std::string::parse::<f64> instead")?;
+    let parse = m.function_meta(parse)?;
+    #[cfg(feature = "number-32")]
+    parse.deprecated("Use std::string::parse::<f32> instead")?;
+    #[cfg(not(feature = "number-32"))]
+    parse.deprecated("Use std::string::parse::<f64> instead")?;
     m.function_meta(is_nan)?;
     m.function_meta(is_infinite)?;
     m.function_meta(is_finite)?;
@@ -173,21 +210,21 @@ pub fn module() -> Result<Module, ContextError> {
     m.function_meta(to_radians)?;
 
     m.function_meta(clone__meta)?;
-    m.implement_trait::<f64>(rune::item!(::std::clone::Clone))?;
+    m.implement_trait::<Float>(rune::item!(::std::clone::Clone))?;
 
     m.function_meta(partial_eq__meta)?;
-    m.implement_trait::<f64>(rune::item!(::std::cmp::PartialEq))?;
+    m.implement_trait::<Float>(rune::item!(::std::cmp::PartialEq))?;
 
     m.function_meta(eq__meta)?;
-    m.implement_trait::<f64>(rune::item!(::std::cmp::Eq))?;
+    m.implement_trait::<Float>(rune::item!(::std::cmp::Eq))?;
 
     m.function_meta(partial_cmp__meta)?;
-    m.implement_trait::<f64>(rune::item!(::std::cmp::PartialOrd))?;
+    m.implement_trait::<Float>(rune::item!(::std::cmp::PartialOrd))?;
 
     m.function_meta(cmp__meta)?;
-    m.implement_trait::<f64>(rune::item!(::std::cmp::Ord))?;
+    m.implement_trait::<Float>(rune::item!(::std::cmp::Ord))?;
 
-    m.constant("EPSILON", f64::EPSILON)
+    m.constant("EPSILON", Float::EPSILON)
         .build()?
         .docs(docstring!(
             /// [Machine epsilon] value for `f64`.
@@ -198,14 +235,14 @@ pub fn module() -> Result<Module, ContextError> {
             ///
             /// [Machine epsilon]: https://en.wikipedia.org/wiki/Machine_epsilon
         ))?;
-    m.constant("MIN", f64::MIN).build()?.docs(docstring!(
+    m.constant("MIN", Float::MIN).build()?.docs(docstring!(
         /// The smallest finite `f64` value.
         ///
         /// Equal to -[`MAX`].
         ///
         /// [`MAX`]: f64::MAX
     ))?;
-    m.constant("MAX", f64::MAX).build()?.docs(docstring!(
+    m.constant("MAX", Float::MAX).build()?.docs(docstring!(
         /// Largest finite `f64` value.
         ///
         /// Equal to
@@ -213,7 +250,7 @@ pub fn module() -> Result<Module, ContextError> {
         ///
         /// [`MAX_EXP`]: f64::MAX_EXP
     ))?;
-    m.constant("MIN_POSITIVE", f64::MIN_POSITIVE)
+    m.constant("MIN_POSITIVE", Float::MIN_POSITIVE)
         .build()?
         .docs(docstring!(
             /// Smallest positive normal `f64` value.
@@ -222,7 +259,7 @@ pub fn module() -> Result<Module, ContextError> {
             ///
             /// [`MIN_EXP`]: f64::MIN_EXP
         ))?;
-    m.constant("MIN_EXP", f64::MIN_EXP)
+    m.constant("MIN_EXP", Float::MIN_EXP)
         .build()?
         .docs(docstring!(
             /// One greater than the minimum possible *normal* power of 2 exponent
@@ -233,7 +270,7 @@ pub fn module() -> Result<Module, ContextError> {
             /// In other words, all normal numbers representable by this type are
             /// greater than or equal to 0.5 × 2<sup><i>MIN_EXP</i></sup>.
         ))?;
-    m.constant("MAX_EXP", f64::MAX_EXP)
+    m.constant("MAX_EXP", Float::MAX_EXP)
         .build()?
         .docs(docstring!(
             /// One greater than the maximum possible power of 2 exponent
@@ -244,7 +281,7 @@ pub fn module() -> Result<Module, ContextError> {
             /// In other words, all numbers representable by this type are
             /// strictly less than 2<sup><i>MAX_EXP</i></sup>.
         ))?;
-    m.constant("MIN_10_EXP", f64::MIN_10_EXP)
+    m.constant("MIN_10_EXP", Float::MIN_10_EXP)
         .build()?
         .docs(docstring!(
             /// Minimum <i>x</i> for which 10<sup><i>x</i></sup> is normal.
@@ -253,7 +290,7 @@ pub fn module() -> Result<Module, ContextError> {
             ///
             /// [`MIN_POSITIVE`]: f64::MIN_POSITIVE
         ))?;
-    m.constant("MAX_10_EXP", f64::MAX_10_EXP)
+    m.constant("MAX_10_EXP", Float::MAX_10_EXP)
         .build()?
         .docs(docstring!(
             /// Maximum <i>x</i> for which 10<sup><i>x</i></sup> is normal.
@@ -262,7 +299,7 @@ pub fn module() -> Result<Module, ContextError> {
             ///
             /// [`MAX`]: f64::MAX
         ))?;
-    m.constant("NAN", f64::NAN).build()?.docs(docstring!(
+    m.constant("NAN", Float::NAN).build()?.docs(docstring!(
         /// Not a number (NaN).
         ///
         ///
@@ -278,12 +315,12 @@ pub fn module() -> Result<Module, ContextError> {
         /// guaranteed about the specific bit pattern chosen here: both payload and sign are arbitrary.
         /// The concrete bit pattern may change across Rust versions and target platforms.
     ))?;
-    m.constant("INFINITY", f64::INFINITY)
+    m.constant("INFINITY", Float::INFINITY)
         .build()?
         .docs(docstring!(
             /// Positive infinity (∞).
         ))?;
-    m.constant("NEG_INFINITY", f64::NEG_INFINITY)
+    m.constant("NEG_INFINITY", Float::NEG_INFINITY)
         .build()?
         .docs(docstring!(
             /// Negative infinity (−∞).
@@ -293,8 +330,8 @@ pub fn module() -> Result<Module, ContextError> {
 }
 
 #[rune::function]
-fn parse(s: &str) -> Result<f64, ParseFloatError> {
-    str::parse::<f64>(s)
+fn parse(s: &str) -> Result<Float, ParseFloatError> {
+    str::parse::<Float>(s)
 }
 
 /// Convert a float to a an integer.
@@ -305,9 +342,16 @@ fn parse(s: &str) -> Result<f64, ParseFloatError> {
 /// let n = 7.0_f64.to::<i64>();
 /// assert_eq!(n, 7);
 /// ```
+#[cfg(not(feature = "number-32"))]
 #[rune::function(instance, path = to::<i64>)]
 fn to_integer(value: f64) -> i64 {
     value as i64
+}
+
+#[cfg(feature = "number-32")]
+#[rune::function(instance, path = to::<i32>)]
+fn to_integer(value: f32) -> i32 {
+    value as i32
 }
 
 /// Converts radians to degrees.
@@ -319,7 +363,7 @@ fn to_integer(value: f64) -> i64 {
 /// assert!(abs_difference < 1e-10);
 /// ```
 #[rune::function(instance)]
-fn to_degrees(this: f64) -> f64 {
+fn to_degrees(this: Float) -> Float {
     this.to_degrees()
 }
 
@@ -332,7 +376,7 @@ fn to_degrees(this: f64) -> f64 {
 /// assert!(abs_difference < 1e-10);
 /// ```
 #[rune::function(instance)]
-fn to_radians(this: f64) -> f64 {
+fn to_radians(this: Float) -> Float {
     this.to_radians()
 }
 
@@ -348,7 +392,7 @@ fn to_radians(this: f64) -> f64 {
 /// assert!(!f.is_nan());
 /// ```
 #[rune::function(instance)]
-fn is_nan(this: f64) -> bool {
+fn is_nan(this: Float) -> bool {
     this.is_nan()
 }
 
@@ -370,7 +414,7 @@ fn is_nan(this: f64) -> bool {
 /// assert!(neg_inf.is_infinite());
 /// ```
 #[rune::function(instance)]
-fn is_infinite(this: f64) -> bool {
+fn is_infinite(this: Float) -> bool {
     this.is_infinite()
 }
 
@@ -391,7 +435,7 @@ fn is_infinite(this: f64) -> bool {
 /// assert!(!neg_inf.is_finite());
 /// ```
 #[rune::function(instance)]
-fn is_finite(this: f64) -> bool {
+fn is_finite(this: Float) -> bool {
     this.is_finite()
 }
 
@@ -417,7 +461,7 @@ fn is_finite(this: f64) -> bool {
 ///
 /// [subnormal]: https://en.wikipedia.org/wiki/Denormal_number
 #[rune::function(instance)]
-fn is_subnormal(this: f64) -> bool {
+fn is_subnormal(this: Float) -> bool {
     this.is_subnormal()
 }
 
@@ -442,7 +486,7 @@ fn is_subnormal(this: f64) -> bool {
 /// ```
 /// [subnormal]: https://en.wikipedia.org/wiki/Denormal_number
 #[rune::function(instance)]
-fn is_normal(this: f64) -> bool {
+fn is_normal(this: Float) -> bool {
     this.is_normal()
 }
 
@@ -463,7 +507,7 @@ fn is_normal(this: f64) -> bool {
 /// assert_eq!(x.max(y), y);
 /// ```
 #[rune::function(keep, instance, protocol = MAX)]
-fn max(this: f64, other: f64) -> f64 {
+fn max(this: Float, other: Float) -> Float {
     this.max(other)
 }
 
@@ -484,7 +528,7 @@ fn max(this: f64, other: f64) -> f64 {
 /// assert_eq!(x.min(y), x);
 /// ```
 #[rune::function(keep, instance, protocol = MIN)]
-fn min(this: f64, other: f64) -> f64 {
+fn min(this: Float, other: Float) -> Float {
     this.min(other)
 }
 
@@ -507,7 +551,7 @@ fn min(this: f64, other: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn sqrt(this: f64) -> f64 {
+fn sqrt(this: Float) -> Float {
     this.sqrt()
 }
 
@@ -529,7 +573,7 @@ fn sqrt(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn abs(this: f64) -> f64 {
+fn abs(this: Float) -> Float {
     this.abs()
 }
 
@@ -545,7 +589,7 @@ fn abs(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn powf(this: f64, other: f64) -> f64 {
+fn powf(this: Float, other: Float) -> Float {
     this.powf(other)
 }
 
@@ -565,7 +609,7 @@ fn powf(this: f64, other: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn powi(this: f64, other: i32) -> f64 {
+fn powi(this: Float, other: i32) -> Float {
     this.powi(other)
 }
 
@@ -584,7 +628,7 @@ fn powi(this: f64, other: i32) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn floor(this: f64) -> f64 {
+fn floor(this: Float) -> Float {
     this.floor()
 }
 
@@ -601,7 +645,7 @@ fn floor(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn ceil(this: f64) -> f64 {
+fn ceil(this: Float) -> Float {
     this.ceil()
 }
 
@@ -625,7 +669,7 @@ fn ceil(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn round(this: f64) -> f64 {
+fn round(this: Float) -> Float {
     this.round()
 }
 
@@ -649,7 +693,7 @@ fn round(this: f64) -> f64 {
 /// ```
 #[rune::function(keep, instance, protocol = CLONE)]
 #[inline]
-fn clone(this: f64) -> f64 {
+fn clone(this: Float) -> Float {
     this
 }
 
@@ -666,7 +710,7 @@ fn clone(this: f64) -> f64 {
 /// ```
 #[rune::function(keep, instance, protocol = PARTIAL_EQ)]
 #[inline]
-fn partial_eq(this: f64, rhs: f64) -> bool {
+fn partial_eq(this: Float, rhs: Float) -> bool {
     this.eq(&rhs)
 }
 
@@ -683,7 +727,7 @@ fn partial_eq(this: f64, rhs: f64) -> bool {
 /// ```
 #[rune::function(keep, instance, protocol = EQ)]
 #[inline]
-fn eq(this: f64, rhs: f64) -> Result<bool, VmError> {
+fn eq(this: Float, rhs: Float) -> Result<bool, VmError> {
     let Some(ordering) = this.partial_cmp(&rhs) else {
         return Err(VmError::new(VmErrorKind::IllegalFloatComparison {
             lhs: this,
@@ -709,7 +753,7 @@ fn eq(this: f64, rhs: f64) -> Result<bool, VmError> {
 /// ```
 #[rune::function(keep, instance, protocol = PARTIAL_CMP)]
 #[inline]
-fn partial_cmp(this: f64, rhs: f64) -> Option<Ordering> {
+fn partial_cmp(this: Float, rhs: Float) -> Option<Ordering> {
     this.partial_cmp(&rhs)
 }
 
@@ -727,7 +771,7 @@ fn partial_cmp(this: f64, rhs: f64) -> Option<Ordering> {
 /// ```
 #[rune::function(keep, instance, protocol = CMP)]
 #[inline]
-fn cmp(this: f64, rhs: f64) -> Result<Ordering, VmError> {
+fn cmp(this: Float, rhs: Float) -> Result<Ordering, VmError> {
     let Some(ordering) = this.partial_cmp(&rhs) else {
         return Err(VmError::new(VmErrorKind::IllegalFloatComparison {
             lhs: this,
@@ -754,7 +798,7 @@ fn cmp(this: f64, rhs: f64) -> Result<Ordering, VmError> {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn acos(this: f64) -> f64 {
+fn acos(this: Float) -> Float {
     this.acos()
 }
 
@@ -774,7 +818,7 @@ fn acos(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn asin(this: f64) -> f64 {
+fn asin(this: Float) -> Float {
     this.asin()
 }
 
@@ -793,7 +837,7 @@ fn asin(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn atan(this: f64) -> f64 {
+fn atan(this: Float) -> Float {
     this.atan()
 }
 
@@ -825,7 +869,7 @@ fn atan(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn atan2(this: f64, other: f64) -> f64 {
+fn atan2(this: Float, other: Float) -> Float {
     this.atan2(other)
 }
 
@@ -842,7 +886,7 @@ fn atan2(this: f64, other: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn cbrt(this: f64) -> f64 {
+fn cbrt(this: Float) -> Float {
     this.cbrt()
 }
 
@@ -858,7 +902,7 @@ fn cbrt(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn cos(this: f64) -> f64 {
+fn cos(this: Float) -> Float {
     this.cos()
 }
 
@@ -883,7 +927,7 @@ fn cos(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn clamp(this: f64, min: f64, max: f64) -> f64 {
+fn clamp(this: Float, min: Float, max: Float) -> Float {
     this.clamp(min, max)
 }
 
@@ -904,7 +948,7 @@ fn clamp(this: f64, min: f64, max: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn div_euclid(this: f64, rhs: f64) -> f64 {
+fn div_euclid(this: Float, rhs: Float) -> Float {
     this.div_euclid(rhs)
 }
 
@@ -931,7 +975,7 @@ fn div_euclid(this: f64, rhs: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn rem_euclid(this: f64, rhs: f64) -> f64 {
+fn rem_euclid(this: Float, rhs: Float) -> Float {
     this.rem_euclid(rhs)
 }
 
@@ -950,7 +994,7 @@ fn rem_euclid(this: f64, rhs: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn exp(this: f64) -> f64 {
+fn exp(this: Float) -> Float {
     this.exp()
 }
 
@@ -967,7 +1011,7 @@ fn exp(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn exp2(this: f64) -> f64 {
+fn exp2(this: Float) -> Float {
     this.exp2()
 }
 
@@ -988,7 +1032,7 @@ fn exp2(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn ln(this: f64) -> f64 {
+fn ln(this: Float) -> Float {
     this.ln()
 }
 
@@ -1011,7 +1055,7 @@ fn ln(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn log(this: f64, base: f64) -> f64 {
+fn log(this: Float, base: Float) -> Float {
     this.log(base)
 }
 
@@ -1038,7 +1082,7 @@ fn log(this: f64, base: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn log2(this: f64) -> f64 {
+fn log2(this: Float) -> Float {
     this.log2()
 }
 
@@ -1057,7 +1101,7 @@ fn log2(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn log10(this: f64) -> f64 {
+fn log10(this: Float) -> Float {
     this.log10()
 }
 
@@ -1073,7 +1117,7 @@ fn log10(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn sin(this: f64) -> f64 {
+fn sin(this: Float) -> Float {
     this.sin()
 }
 
@@ -1088,6 +1132,6 @@ fn sin(this: f64) -> f64 {
 /// ```
 #[rune::function(instance)]
 #[cfg(feature = "std")]
-fn tan(this: f64) -> f64 {
+fn tan(this: Float) -> Float {
     this.tan()
 }

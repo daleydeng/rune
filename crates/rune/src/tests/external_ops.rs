@@ -1,6 +1,7 @@
 prelude!();
 
 use std::cmp::Ordering;
+use crate::runtime::{FloatType, SignedType, UnsignedType};
 
 #[test]
 fn struct_assign() -> Result<()> {
@@ -8,24 +9,24 @@ fn struct_assign() -> Result<()> {
         ([$($op:tt)*], $protocol:ident, $derived:tt, $initial:literal, $arg:literal, $expected:literal) => {{
             #[derive(Debug, Default, Any)]
             struct External {
-                value: i64,
-                field: i64,
+                value: SignedType,
+                field: SignedType,
                 #[rune($derived)]
-                derived: i64,
+                derived: SignedType,
                 #[rune($derived = External::custom)]
-                custom: i64,
+                custom: SignedType,
             }
 
             impl External {
-                fn value(&mut self, value: i64) {
+                fn value(&mut self, value: SignedType) {
                     self.value $($op)* value;
                 }
 
-                fn field(&mut self, value: i64) {
+                fn field(&mut self, value: SignedType) {
                     self.field $($op)* value;
                 }
 
-                fn custom(&mut self, value: i64) {
+                fn custom(&mut self, value: SignedType) {
                     self.custom $($op)* value;
                 }
             }
@@ -53,7 +54,7 @@ fn struct_assign() -> Result<()> {
                 "#, op = stringify!($($op)*), arg = stringify!($arg)),
             )?)?;
 
-            let unit = prepare(&mut sources)
+                let unit = prepare(&mut sources)
                 .with_context(&context)
                 .build()?;
 
@@ -67,7 +68,7 @@ fn struct_assign() -> Result<()> {
                 foo.derived = $initial;
                 foo.custom = $initial;
 
-                let output = vm.try_clone()?.call(["type"], (&mut foo,))?;
+                    let output = vm.try_clone()?.call(["type"], (&mut foo,))?;
 
                 assert_eq!(foo.value, $expected, "{} != {} (value)", foo.value, $expected);
                 assert_eq!(foo.field, $expected, "{} != {} (field)", foo.field, $expected);
@@ -96,18 +97,23 @@ fn tuple_assign() -> Result<()> {
     macro_rules! test_case {
         ([$($op:tt)*], $protocol:ident, $derived:tt, $initial:literal, $arg:literal, $expected:literal) => {{
             #[derive(Debug, Default, Any)]
-            struct External(i64, i64, #[rune($derived)] i64, #[rune($derived = External::custom)] i64);
+            struct External(
+                SignedType,
+                SignedType,
+                #[rune($derived)] SignedType,
+                #[rune($derived = External::custom)] SignedType,
+            );
 
             impl External {
-                fn value(&mut self, value: i64) {
+                fn value(&mut self, value: SignedType) {
                     self.0 $($op)* value;
                 }
 
-                fn field(&mut self, value: i64) {
+                fn field(&mut self, value: SignedType) {
                     self.1 $($op)* value;
                 }
 
-                fn custom(&mut self, value: i64) {
+                fn custom(&mut self, value: SignedType) {
                     self.3 $($op)* value;
                 }
             }
@@ -179,11 +185,11 @@ fn struct_binary() -> Result<()> {
         ([$($op:tt)*], $protocol:ident, $derived:tt, $initial:literal, $arg:literal, $expected:literal) => {{
             #[derive(Debug, Any)]
             struct External {
-                value: i64,
+                value: SignedType,
             }
 
             impl External {
-                fn value(&self, value: i64) -> i64 {
+                fn value(&self, value: SignedType) -> SignedType {
                     self.value $($op)* value
                 }
             }
@@ -211,9 +217,9 @@ fn struct_binary() -> Result<()> {
 
             let foo = External { value: $initial };
             let output = vm.call(["type"], (foo,))?;
-            let value = crate::from_value::<i64>(output)?;
+            let value = crate::from_value::<SignedType>(output)?;
 
-            let expected: i64 = $expected;
+            let expected: SignedType = $expected;
             assert_eq!(value, expected, "{value} != {expected} (value)");
         }};
     }
@@ -278,10 +284,10 @@ fn struct_unary() -> Result<()> {
         }};
     }
 
-    test_case!([-], NEG, neg, i64, 100, -100);
-    test_case!([-], NEG, neg, f64, 100.0, -100.0);
-    test_case!([!], NOT, not, i64, 100, !100);
-    test_case!([!], NOT, not, u64, 100, !100);
+    test_case!([-], NEG, neg, SignedType, 100, -100);
+    test_case!([-], NEG, neg, FloatType, 100.0, -100.0);
+    test_case!([!], NOT, not, SignedType, 100, !100);
+    test_case!([!], NOT, not, UnsignedType, 100, !100);
     test_case!([!], NOT, not, bool, true, false);
     Ok(())
 }
@@ -292,11 +298,11 @@ fn ordering_struct() -> Result<()> {
         ([$($op:tt)*], $protocol:ident, $initial:literal, $arg:literal, $expected:literal) => {{
             #[derive(Debug, Default, Any)]
             struct External {
-                value: i64,
+                value: SignedType,
             }
 
             impl External {
-                fn value(&self, value: i64) -> Option<Ordering> {
+                fn value(&self, value: SignedType) -> Option<Ordering> {
                     PartialOrd::partial_cmp(&self.value, &value)
                 }
             }
@@ -362,11 +368,11 @@ fn eq_struct() -> Result<()> {
         ([$($op:tt)*], $protocol:ident, $initial:literal, $arg:literal, $expected:literal) => {{
             #[derive(Debug, Default, Any)]
             struct External {
-                value: i64,
+                value: SignedType,
             }
 
             impl External {
-                fn value(&self, value: i64) -> bool {
+                fn value(&self, value: SignedType) -> bool {
                     self.value $($op)* value
                 }
             }

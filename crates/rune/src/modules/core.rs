@@ -5,7 +5,7 @@ use crate::alloc::prelude::*;
 use crate::compile;
 use crate::macros::{quote, FormatArgs, MacroContext, TokenStream};
 use crate::parse::Parser;
-use crate::runtime::{Value, VmError};
+use crate::runtime::{FloatType, SignedType, UnsignedType, Value, VmError};
 use crate::{docstring, ContextError, Module};
 
 /// Core types and methods in Rune.
@@ -21,13 +21,13 @@ pub fn module() -> Result<Module, ContextError> {
     module.ty::<char>()?.docs(docstring! {
         /// The primitive character type.
     })?;
-    module.ty::<u64>()?.docs(docstring! {
+    module.ty::<UnsignedType>()?.docs(docstring! {
         /// The unsigned integer type.
     })?;
-    module.ty::<i64>()?.docs(docstring! {
+    module.ty::<SignedType>()?.docs(docstring! {
         /// The signed integer type.
     })?;
-    module.ty::<f64>()?.docs(docstring! {
+    module.ty::<FloatType>()?.docs(docstring! {
         /// The primitive float type.
     })?;
 

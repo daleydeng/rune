@@ -6,7 +6,7 @@ use crate::alloc::prelude::*;
 use crate::ast::{self, Span, Spanned};
 use crate::compile::{ItemId, ModId};
 use crate::parse::NonZeroId;
-use crate::runtime::{format, Type};
+use crate::runtime::{format, FloatType, SignedType, Type, UnsignedType};
 use crate::Hash;
 
 #[derive(TryClone, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -183,9 +183,9 @@ pub(crate) struct Expr<'hir> {
 #[non_exhaustive]
 pub(crate) enum Lit<'hir> {
     Bool(bool),
-    Unsigned(u64),
-    Signed(i64),
-    Float(f64),
+    Unsigned(UnsignedType),
+    Signed(SignedType),
+    Float(FloatType),
     Char(char),
     Str(&'hir str),
     ByteStr(&'hir [u8]),

@@ -80,5 +80,8 @@ fn test_field_fn() {
         pub fn main(val) { std::any::type_name_of_val(val.x) }
     };
 
+    #[cfg(feature = "number-32")]
+    assert_eq!(s, "::std::u32");
+    #[cfg(not(feature = "number-32"))]
     assert_eq!(s, "::std::u64");
 }

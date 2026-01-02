@@ -180,26 +180,61 @@ fn i64() {
     op_tests!(i64, 0b1100 >> 2 = 0b1100 >> 2);
     op_tests!(i64, !0b10100i64 = !0b10100i64);
 
-    error_test!(9223372036854775807i64 + 2 = Overflow);
-    error_test!(-9223372036854775808i64 - 2 = Underflow);
-    error_test!(9223372036854775807i64 * 2 = Overflow);
+    #[cfg(not(feature = "number-32"))]
+    {
+        error_test!(9223372036854775807i64 + 2 = Overflow);
+        error_test!(-9223372036854775808i64 - 2 = Underflow);
+        error_test!(9223372036854775807i64 * 2 = Overflow);
+    }
+
+    #[cfg(feature = "number-32")]
+    {
+        error_test!(2147483647 + 2 = Overflow);
+        error_test!(-2147483648 - 2 = Underflow);
+        error_test!(2147483647 * 2 = Overflow);
+    }
     error_test!(10 / 0 = DivideByZero);
     error_test!(10 % 0 = DivideByZero);
-    error_test!(0b1 << 64 = Overflow);
-    error_test!(0b1 >> 64 = Underflow);
+    #[cfg(not(feature = "number-32"))]
+    {
+        error_test!(0b1 << 64 = Overflow);
+        error_test!(0b1 >> 64 = Underflow);
+    }
+
+    #[cfg(feature = "number-32")]
+    {
+        error_test!(0b1 << 32 = Overflow);
+        error_test!(0b1 >> 32 = Underflow);
+    }
 }
 
 #[test]
 fn u64() {
-    op_tests!(u64, 0b1100 & 0b0110 = 0b1100 & 0b0110);
-    op_tests!(u64, 0b1100 ^ 0b0110 = 0b1100 ^ 0b0110);
-    op_tests!(u64, 0b1100 | 0b0110 = 0b1100 | 0b0110);
-    op_tests!(u64, 0b1100 << 2 = 0b1100 << 2);
-    op_tests!(u64, 0b1100 >> 2 = 0b1100 >> 2);
-    op_tests!(u64, !0b10100u64 = !0b10100u64);
+    #[cfg(not(feature = "number-32"))]
+    {
+        op_tests!(u64, 0b1100 & 0b0110 = 0b1100 & 0b0110);
+        op_tests!(u64, 0b1100 ^ 0b0110 = 0b1100 ^ 0b0110);
+        op_tests!(u64, 0b1100 | 0b0110 = 0b1100 | 0b0110);
+        op_tests!(u64, 0b1100 << 2 = 0b1100 << 2);
+        op_tests!(u64, 0b1100 >> 2 = 0b1100 >> 2);
+        op_tests!(u64, !0b10100u64 = !0b10100u64);
 
-    error_test!(0b1 << 64 = Overflow);
-    error_test!(0b1 >> 64 = Underflow);
+        error_test!(0b1 << 64 = Overflow);
+        error_test!(0b1 >> 64 = Underflow);
+    }
+
+    #[cfg(feature = "number-32")]
+    {
+        op_tests!(u64, 0b1100u32 & 0b0110u32 = (0b1100u32 & 0b0110u32) as u64);
+        op_tests!(u64, 0b1100u32 ^ 0b0110u32 = (0b1100u32 ^ 0b0110u32) as u64);
+        op_tests!(u64, 0b1100u32 | 0b0110u32 = (0b1100u32 | 0b0110u32) as u64);
+        op_tests!(u64, 0b1100u32 << 2 = (0b1100u32 << 2) as u64);
+        op_tests!(u64, 0b1100u32 >> 2 = (0b1100u32 >> 2) as u64);
+        op_tests!(u64, !0b10100u32 = (!0b10100u32) as u64);
+
+        error_test!(0b1 << 32 = Overflow);
+        error_test!(0b1 >> 32 = Underflow);
+    }
 }
 
 #[test]
@@ -209,7 +244,15 @@ fn u8() {
     op_tests!(u8, 0b1100u8 | 0b0110u8 = 0b1100u8 | 0b0110u8);
     op_tests!(u8, 0b1100u8 << 2 = 0b1100u8 << 2);
     op_tests!(u8, 0b1100u8 >> 2 = 0b1100u8 >> 2);
-    op_tests!(u64, !0b10100u8 = !0b10100u64);
+    #[cfg(not(feature = "number-32"))]
+    {
+        op_tests!(u64, !0b10100u8 = !0b10100u64);
+    }
+
+    #[cfg(feature = "number-32")]
+    {
+        op_tests!(u64, !0b10100u8 = (!0b10100u32) as u64);
+    }
 }
 
 #[test]

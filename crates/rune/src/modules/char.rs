@@ -2,7 +2,7 @@
 
 use core::char::ParseCharError;
 
-use crate::runtime::{Value, VmError, VmErrorKind};
+use crate::runtime::{SignedType, Value, VmError, VmErrorKind};
 use crate::{ContextError, Module};
 
 use crate as rune;
@@ -35,7 +35,9 @@ pub fn module() -> Result<Module, ContextError> {
 /// assert!(c.is_some());
 /// ```
 #[rune::function]
-fn from_i64(value: i64) -> Result<Option<Value>, VmError> {
+fn from_i64(value: SignedType) -> Result<Option<Value>, VmError> {
+    let value = value as i64;
+
     if value < 0 {
         Err(VmError::new(VmErrorKind::Underflow))
     } else if value > u32::MAX as i64 {
@@ -58,8 +60,8 @@ fn from_i64(value: i64) -> Result<Option<Value>, VmError> {
 /// assert_eq!(c.to_i64(), 80);
 /// ```
 #[rune::function(instance)]
-fn to_i64(value: char) -> i64 {
-    value as i64
+fn to_i64(value: char) -> SignedType {
+    value as u32 as SignedType
 }
 
 /// Returns `true` if this `char` has the `Alphabetic` property.

@@ -13,7 +13,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::compile::meta;
-use crate::runtime::{AnyTypeInfo, RuntimeError};
+use crate::runtime::{AnyTypeInfo, RuntimeError, SignedType};
 
 #[test]
 fn bug_344_function() -> Result<()> {
@@ -33,19 +33,19 @@ fn bug_344_function() -> Result<()> {
     assert_eq!(stack.at(Address::new(0)).as_signed()?, 42);
     return Ok(());
 
-    fn function(check: &GuardCheck) -> i64 {
+    fn function(check: &GuardCheck) -> SignedType {
         check.ensure_not_dropped("immediate argument");
-        42
+        SignedType::from(42)
     }
 }
 
 #[test]
 fn bug_344_inst_fn() -> Result<()> {
     #[rune::function(instance)]
-    fn function(s: &GuardCheck, check: &GuardCheck) -> i64 {
+    fn function(s: &GuardCheck, check: &GuardCheck) -> SignedType {
         s.ensure_not_dropped("async self argument");
         check.ensure_not_dropped("async instance argument");
-        42
+        SignedType::from(42)
     }
 
     let mut context = Context::new();
@@ -88,19 +88,19 @@ fn bug_344_async_function() -> Result<()> {
     assert_eq!(block_on(future)?.as_signed()?, 42);
     return Ok(());
 
-    async fn function(check: Ref<GuardCheck>) -> i64 {
+    async fn function(check: Ref<GuardCheck>) -> SignedType {
         check.ensure_not_dropped("async argument");
-        42
+        SignedType::from(42)
     }
 }
 
 #[test]
 fn bug_344_async_inst_fn() -> Result<()> {
     #[rune::function(instance)]
-    async fn function(s: Ref<GuardCheck>, check: Ref<GuardCheck>) -> i64 {
+    async fn function(s: Ref<GuardCheck>, check: Ref<GuardCheck>) -> SignedType {
         s.ensure_not_dropped("self argument");
         check.ensure_not_dropped("instance argument");
-        42
+        SignedType::from(42)
     }
 
     let mut context = Context::new();

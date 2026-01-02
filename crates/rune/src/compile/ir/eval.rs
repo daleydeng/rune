@@ -1,4 +1,4 @@
-use core::ops::{Add, Mul, Shl, Shr, Sub};
+use core::ops::{Add, Mul, Sub};
 
 use crate::alloc::fmt::TryWrite;
 use crate::alloc::prelude::*;
@@ -100,7 +100,9 @@ fn eval_ir_binary(
                                 compile::Error::msg(&ir.rhs, "cannot be converted to shift operand")
                             })?;
 
-                            let n = a.shl(b);
+                            let n = a
+                                .checked_shl(b)
+                                .ok_or_else(|| compile::Error::msg(span, "attempt to shift left with overflow"))?;
                             break 'out Inline::Signed(n);
                         }
                         ir::IrBinaryOp::Shr => {
@@ -108,7 +110,9 @@ fn eval_ir_binary(
                                 compile::Error::msg(&ir.rhs, "cannot be converted to shift operand")
                             })?;
 
-                            let n = a.shr(b);
+                            let n = a
+                                .checked_shr(b)
+                                .ok_or_else(|| compile::Error::msg(span, "attempt to shift right with overflow"))?;
                             break 'out Inline::Signed(n);
                         }
                         ir::IrBinaryOp::Lt => break 'out Inline::Bool(a < b),

@@ -1,11 +1,12 @@
 prelude!();
 
 use crate::alloc::String;
+use crate::runtime::SignedType;
 
 #[derive(Any, Debug)]
 struct Foo {
     #[rune(get, set, copy)]
-    number: i64,
+    number: SignedType,
     #[rune(get, set)]
     string: String,
     #[rune(get, set)]

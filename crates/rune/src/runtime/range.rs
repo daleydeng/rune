@@ -8,7 +8,7 @@ use crate::Any;
 
 use super::{
     EnvProtocolCaller, FromValue, Inline, ProtocolCaller, Repr, RuntimeError, StepsBetween,
-    ToValue, Value, VmError, VmErrorKind,
+    SignedType, ToValue, UnsignedType, Value, VmError, VmErrorKind,
 };
 
 /// Type for a range expression `start..end`.
@@ -95,11 +95,11 @@ impl Range {
     pub fn iter(&self) -> Result<Value, VmError> {
         let value = match (self.start.as_ref(), self.end.as_ref()) {
             (Repr::Inline(Inline::Unsigned(start)), Repr::Inline(end)) => {
-                let end = end.as_integer::<u64>()?;
+                let end = end.as_integer::<UnsignedType>()?;
                 rune::to_value(RangeIter::new(*start..end))?
             }
             (Repr::Inline(Inline::Signed(start)), Repr::Inline(end)) => {
-                let end = end.as_integer::<i64>()?;
+                let end = end.as_integer::<SignedType>()?;
                 rune::to_value(RangeIter::new(*start..end))?
             }
             (Repr::Inline(Inline::Char(start)), Repr::Inline(Inline::Char(end))) => {

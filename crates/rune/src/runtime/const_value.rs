@@ -308,10 +308,10 @@ impl ConstValue {
     /// ```
     pub fn as_integer<T>(&self) -> Result<T, RuntimeError>
     where
-        T: TryFrom<i64> + TryFrom<u64>,
+        T: TryFrom<i128> + TryFrom<u128>,
     {
         match self.kind {
-            ConstValueKind::Inline(Inline::Signed(value)) => match value.try_into() {
+            ConstValueKind::Inline(Inline::Signed(value)) => match i128::from(value).try_into() {
                 Ok(number) => Ok(number),
                 Err(..) => Err(RuntimeError::new(
                     VmErrorKind::ValueToIntegerCoercionError {
@@ -320,7 +320,7 @@ impl ConstValue {
                     },
                 )),
             },
-            ConstValueKind::Inline(Inline::Unsigned(value)) => match value.try_into() {
+            ConstValueKind::Inline(Inline::Unsigned(value)) => match u128::from(value).try_into() {
                 Ok(number) => Ok(number),
                 Err(..) => Err(RuntimeError::new(
                     VmErrorKind::ValueToIntegerCoercionError {

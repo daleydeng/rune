@@ -3,6 +3,7 @@ use core::fmt;
 use crate::alloc;
 use crate::alloc::prelude::*;
 use crate::runtime::{self, Bytes, Inline, Object, OwnedTuple, Repr, RttiKind, Vec};
+use crate::runtime::{FloatType, SignedType, UnsignedType};
 use crate::TypeHash;
 
 use serde::de::{self, Deserialize as _, Error as _};
@@ -32,9 +33,39 @@ impl ser::Serialize for Value {
                 Inline::Unit => serializer.serialize_unit(),
                 Inline::Bool(value) => serializer.serialize_bool(value),
                 Inline::Char(value) => serializer.serialize_char(value),
-                Inline::Unsigned(value) => serializer.serialize_u64(value),
-                Inline::Signed(value) => serializer.serialize_i64(value),
-                Inline::Float(value) => serializer.serialize_f64(value),
+                Inline::Unsigned(value) => {
+                    #[cfg(feature = "number-32")]
+                    {
+                        serializer.serialize_u32(value)
+                    }
+
+                    #[cfg(not(feature = "number-32"))]
+                    {
+                        serializer.serialize_u64(value)
+                    }
+                }
+                Inline::Signed(value) => {
+                    #[cfg(feature = "number-32")]
+                    {
+                        serializer.serialize_i32(value)
+                    }
+
+                    #[cfg(not(feature = "number-32"))]
+                    {
+                        serializer.serialize_i64(value)
+                    }
+                }
+                Inline::Float(value) => {
+                    #[cfg(feature = "number-32")]
+                    {
+                        serializer.serialize_f32(value)
+                    }
+
+                    #[cfg(not(feature = "number-32"))]
+                    {
+                        serializer.serialize_f64(value)
+                    }
+                }
                 Inline::Type(..) => Err(ser::Error::custom("cannot serialize types")),
                 Inline::Ordering(..) => Err(ser::Error::custom("cannot serialize orderings")),
                 Inline::Hash(..) => Err(ser::Error::custom("cannot serialize type hashes")),
@@ -157,7 +188,7 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        Ok(Value::from(v as SignedType))
     }
 
     #[inline]
@@ -165,7 +196,7 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        Ok(Value::from(v as SignedType))
     }
 
     #[inline]
@@ -173,7 +204,9 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        SignedType::try_from(v)
+            .map(Value::from)
+            .map_err(|_| E::custom("i32 out of range for VM signed integer"))
     }
 
     #[inline]
@@ -181,7 +214,9 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v))
+        SignedType::try_from(v)
+            .map(Value::from)
+            .map_err(|_| E::custom("i64 out of range for VM signed integer"))
     }
 
     #[inline]
@@ -189,7 +224,9 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        SignedType::try_from(v)
+            .map(Value::from)
+            .map_err(|_| E::custom("i128 out of range for VM signed integer"))
     }
 
     #[inline]
@@ -197,7 +234,7 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        Ok(Value::from(v as UnsignedType))
     }
 
     #[inline]
@@ -205,7 +242,7 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        Ok(Value::from(v as UnsignedType))
     }
 
     #[inline]
@@ -213,7 +250,9 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        UnsignedType::try_from(v)
+            .map(Value::from)
+            .map_err(|_| E::custom("u32 out of range for VM unsigned integer"))
     }
 
     #[inline]
@@ -221,7 +260,9 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        UnsignedType::try_from(v)
+            .map(Value::from)
+            .map_err(|_| E::custom("u64 out of range for VM unsigned integer"))
     }
 
     #[inline]
@@ -229,7 +270,9 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as i64))
+        UnsignedType::try_from(v)
+            .map(Value::from)
+            .map_err(|_| E::custom("u128 out of range for VM unsigned integer"))
     }
 
     #[inline]
@@ -237,7 +280,7 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v as f64))
+        Ok(Value::from(v as FloatType))
     }
 
     #[inline]
@@ -245,7 +288,7 @@ impl<'de> de::Visitor<'de> for VmVisitor {
     where
         E: de::Error,
     {
-        Ok(Value::from(v))
+        Ok(Value::from(v as FloatType))
     }
 
     #[inline]

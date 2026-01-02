@@ -16,6 +16,16 @@ pub trait InstallWith {
 impl InstallWith for i64 {}
 impl InstallWith for u64 {}
 impl InstallWith for f64 {}
+
+#[cfg(feature = "number-32")]
+impl InstallWith for i32 {}
+
+#[cfg(feature = "number-32")]
+impl InstallWith for u32 {}
+
+#[cfg(feature = "number-32")]
+impl InstallWith for f32 {}
+
 impl InstallWith for char {}
 impl InstallWith for bool {}
 impl InstallWith for Ordering {}

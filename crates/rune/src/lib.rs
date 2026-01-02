@@ -181,6 +181,8 @@ pub mod alloc;
 #[doc(inline)]
 pub use rune_alloc::sync;
 
+pub mod number;
+
 /// Helper prelude for `#[no_std]` support.
 pub mod no_std;
 
@@ -925,34 +927,95 @@ rune_macros::binding! {
     impl ::std::bool for bool;
     #[type_of]
     impl ::std::char for char;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::i64 for i8;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::i64 for i16;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::i64 for i32;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::i64 for i64;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::i64 for i128;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::i64 for isize;
+
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::i32 for i8;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::i32 for i16;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::i32 for i32;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::i32 for i64;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::i32 for i128;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::i32 for isize;
+
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::u64 for u8;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::u64 for u16;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::u64 for u32;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::u64 for u64;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::u64 for u128;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::u64 for usize;
+
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::u32 for u8;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::u32 for u16;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::u32 for u32;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::u32 for u64;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::u32 for u128;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::u32 for usize;
+
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::f64 for f32;
+    #[cfg(not(feature = "number-32"))]
     #[type_of]
     impl ::std::f64 for f64;
+
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::f32 for f32;
+    #[cfg(feature = "number-32")]
+    #[type_of]
+    impl ::std::f32 for f64;
     #[type_of]
     impl<C, B> ::std::ops::ControlFlow for core::ops::ControlFlow<C, B>;
     #[type_of]

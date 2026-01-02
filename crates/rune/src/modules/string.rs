@@ -1260,9 +1260,16 @@ fn index_get(s: &str, key: Value) -> Result<String, VmError> {
 /// let four = "4".parse::<i64>()?;
 /// assert_eq!(4, four);
 /// ```
+#[cfg(not(feature = "number-32"))]
 #[rune::function(instance, path = parse::<i64>)]
 fn parse_int(s: &str) -> Result<i64, ParseIntError> {
     str::parse::<i64>(s)
+}
+
+#[cfg(feature = "number-32")]
+#[rune::function(instance, path = parse::<i32>)]
+fn parse_int(s: &str) -> Result<i32, ParseIntError> {
+    str::parse::<i32>(s)
 }
 
 /// Parses this string into a float.
@@ -1280,9 +1287,16 @@ fn parse_int(s: &str) -> Result<i64, ParseIntError> {
 /// let pi = "3.1415".parse::<f64>()?;
 /// assert_eq!(3.1415, pi);
 /// ```
+#[cfg(not(feature = "number-32"))]
 #[rune::function(instance, path = parse::<f64>)]
 fn parse_float(s: &str) -> Result<f64, ParseFloatError> {
     str::parse::<f64>(s)
+}
+
+#[cfg(feature = "number-32")]
+#[rune::function(instance, path = parse::<f32>)]
+fn parse_float(s: &str) -> Result<f32, ParseFloatError> {
+    str::parse::<f32>(s)
 }
 
 /// Parses this string into a character.
