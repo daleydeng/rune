@@ -341,7 +341,7 @@ impl Context {
     /// * `::std::io::dbg`
     /// * `::std::io::print`
     /// * `::std::io::println`
-    pub fn with_config(#[allow(unused)] stdio: bool, with_iter: bool) -> Result<Self, ContextError> {
+    pub fn with_config(#[allow(unused)] stdio: bool) -> Result<Self, ContextError> {
         let mut this = Self::new();
 
         // NB: Order is important, since later modules might use types defined
@@ -355,7 +355,7 @@ impl Context {
         this.install(crate::modules::num::module()?)?;
         this.install(crate::modules::hash::module()?)?;
 
-        this.install(crate::modules::string::module(with_iter)?)?;
+        this.install(crate::modules::string::module()?)?;
         this.install(crate::modules::bytes::module()?)?;
 
         this.install(crate::modules::collections::module()?)?;
@@ -390,7 +390,7 @@ impl Context {
 
     /// Construct a new collection of functions with default packages installed.
     pub fn with_default_modules() -> Result<Self, ContextError> {
-        Self::with_config(true, true)
+        Self::with_config(true)
     }
 
     /// Construct a runtime context used when executing the virtual machine.

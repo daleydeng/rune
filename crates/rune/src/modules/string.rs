@@ -30,7 +30,7 @@ use crate::{Any, ContextError, Module, TypeHash};
 /// assert_eq!(string1, string2);
 /// ```
 #[rune::module(::std::string)]
-pub fn module(with_iter: bool) -> Result<Module, ContextError> {
+pub fn module() -> Result<Module, ContextError> {
     let mut m = Module::from_meta(self::module__meta)?;
 
     m.ty::<String>()?;
@@ -93,26 +93,23 @@ pub fn module(with_iter: bool) -> Result<Module, ContextError> {
     m.function_meta(display_fmt__meta)?;
     m.function_meta(debug_fmt__meta)?;
 
-    if with_iter {
-        m.ty::<Chars>()?;
-        m.function_meta(Chars::next__meta)?;
-        m.function_meta(Chars::next_back__meta)?;
-        m.implement_trait::<Chars>(rune::item!(::std::iter::Iterator))?;
-        m.implement_trait::<Chars>(rune::item!(::std::iter::DoubleEndedIterator))?;
+    m.ty::<Chars>()?;
+    m.function_meta(Chars::next__meta)?;
+    m.function_meta(Chars::next_back__meta)?;
+    m.implement_trait::<Chars>(rune::item!(::std::iter::Iterator))?;
+    m.implement_trait::<Chars>(rune::item!(::std::iter::DoubleEndedIterator))?;
 
-        macro_rules! split {
-            ($ty:ty) => {
-                m.ty::<Split<$ty>>()?;
-                m.function_meta(Split::<$ty>::next__meta)?;
-                m.implement_trait::<Split<$ty>>(rune::item!(::std::iter::Iterator))?;
-            };
-        }
-
-        split!(Function);
-        split!(String);
-        split!(char);
+    macro_rules! split {
+        ($ty:ty) => {
+            m.ty::<Split<$ty>>()?;
+            m.function_meta(Split::<$ty>::next__meta)?;
+            m.implement_trait::<Split<$ty>>(rune::item!(::std::iter::Iterator))?;
+        };
     }
 
+    split!(Function);
+    split!(String);
+    split!(char);
     Ok(m)
 }
 
